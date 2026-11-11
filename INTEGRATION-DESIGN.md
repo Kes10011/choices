@@ -1,9 +1,9 @@
 # Choices — Asset Integration Design Doc
 
 **Status:** DRAFT v1 (Elephant) — 2026-11-11 ~15:50 AST; revised 2026-11-11 ~20:00 AST
-(Goldfish review 3 of 3 resolved — see the resolution notes in §2/§3/§7/§8/§9; reviews 1
-and 2 still pending, further revision when they land).
-**Author:** coordinator (Elephant session). **Review:** Goldfish 3/3 resolved 2026-11-11 ~20:00 AST.
+(Goldfish 3/3 resolved) and ~20:20 AST (Goldfish 1/3 + 2/3 resolved). **ALL THREE GOLDFISH
+REVIEWS RESOLVED — the doc is now vetted and buildable.**
+**Author:** coordinator (Elephant session). **Review:** Goldfish 1/3, 2/3, 3/3 all resolved 2026-11-11.
 **Goal:** get every CGTrader download Kester picked into the game, replace the boxy/primitive
 models with realistic ones, make buildings enterable, add the door-knob glow, and improve
 progression + flow — without breaking anything that already works. **Scope (Kester,
@@ -54,9 +54,11 @@ checkpoint, Appendix A.) See §6 item 13 for the implementation.
 
 **Out of scope for this build (do NOT build):**
 - The CHASE STAGE (villains on bikes/vehicles trying to run Kes off the road) is PROPOSED
-  ONLY — see Appendix A for the full draft concept. Kester and the parent are still shaping
-  it in chat. No chase-stage code until Kester approves the concept. (The 4 new vehicles
-  make it possible; the stage itself is not part of this build.)
+  ONLY — see Appendix A for the full draft concept. The concept is essentially SETTLED
+  (Appendix A §A5) but still NOT approved for build — no chase-stage code until Kester
+  approves it. (The 4 new vehicles make it possible; the stage itself is not part of this
+  build.) The settled chase places constraints on the vehicle choices: the truck must be
+  promotable to a war-rig, the bike must work as a pirate vehicle, the Jeep is the chase car.
 - The archviz scene (491 MB Blender render file) — too heavy, render-only. Deferred.
 - The audiobook / any FinFit work — unrelated, ignore.
 
@@ -79,8 +81,13 @@ Each decision = 3 choices (rank 0/1/2) with effects `{health, thirst, hunger, wa
 + hours cost + outcome text + lesson text. Decisions trigger by walking to a floating marker
 and interacting (E). When both stage decisions are done → "Mission complete" toast, a green
 flare appears at the north checkpoint (0, -102) → walk there to advance. `advanceStage()`:
-next day 06:00, hunger floored at 45. Win = reach the checkpoint on Day 4. Night is stage 3
-only (`isNight` = stage === 2). Player spawns at (0, 1.7, 84); world clamp x ±112, z -112..114.
+next day 06:00, hunger AND thirst floored at 45, warmth floored at 60, heals +15, respawns
+the player at (0, 1.7, 90), `mobs.clearAll()`, `spawnAmmo()`. Win = reach the checkpoint on
+Day 4. Night is stage 3 only (`isNight` = stage === 2). **Player spawns at (0, 1.7, 264)** —
+the code has `const dD=180` and the spawn is `(0, 1.7, 84+dD)`; world clamp x ±112,
+z -112..294 (114+dD). **The map is ~224 m wide × ~406 m long, NOT ~224 m square.** All
+decision-marker coordinates in the table above are in this shifted frame (they match the
+`AA()` call args) — state the frame explicitly when placing anything new.
 
 **Stats:** health / thirst / hunger / warmth / battery. Death causes: dehydration, starvation,
 freezing, fire, mob, fall. Fire = **16/sec** within 1.05 m (matches the bar). Fall:
@@ -91,13 +98,23 @@ softer than the bar's "~half health from a short building"; see §6 item 7).
 Feral: dog 40%, cow 30%. HP: cow 90 / dog 40 / cat 20 / chicken 12. Animals wander, flee
 when bumped, feral ones attack. Sounds: 5 recorded MP3s embedded (cat, cow, dog, hen,
 rooster). Engine + fire sounds are SYNTHESIZED (noise buffer + bandpass filter) — NOT
-recorded. Kester's bar wants a proper engine-acceleration sound: known gap, see §6.
+recorded. Kester's bar wants a proper engine-acceleration sound: known gap, see §6 item 14.
 
 **Mobs** (`class lS` + `LS()` builder): spawn 3–6 per group from building corners 42–95 m
-away, first spawn at 28 s, then every ~35–85 s (interval shrinks as the stage number grows).
-HP 55, states walk/chase/windup/recover, weapon random (cleaver/bat/pipe/crowbar, dmg 7–9).
-**Mobs are built from PRIMITIVES** — box torso/limbs, sphere head + cap. This is the single
-biggest "boxy" violation left in the game, and the main thing the human models fix.
+away, first spawn at 28 s, then `spawnT = max(35, 85 − stage*10) + random*55` — and the
+timer ONLY ticks while zero mobs are alive (no new group spawns while any mob lives).
+`advanceStage()` calls `mobs.clearAll()` with `spawnT=40`. HP 55, states walk/chase/windup/
+recover, weapon random (cleaver/bat/pipe/crowbar, dmg 7–9). **Mobs are built from
+PRIMITIVES** — box torso/limbs, sphere head + cap. This is the single biggest "boxy"
+violation left in the game, and the main thing the human models fix. **The mob update loop
+writes six animation slots unguarded every frame** — `legL/legR` (gait), `armL`
+(counter-swing), `armR` (windup −2.5 / recover), `torso` (rotation.z/x), `head`
+(rotation.x=.18 on chase). There is no optional chaining and no fallback: a mob GLB that
+lacks ANY of the six slots throws a `TypeError` every frame or leaves the mob frozen. The
+adapter MUST provide all six (see §3b). Hitting a mob before it swings costs **−10 health
+(−25 if killed)** via `unprovoked()` — the morality system punishes unprovoked attacks
+(see §6 item 4: the Day 4 surge group must spawn provoked, or the climax punishes the
+player for fighting it).
 
 **The Wounded Stranger** is a primitive-built sitting man (`P6()` builder, torso node animated
 for breathing) propped against the wrecked sedan at (2.2, 7.2). He is the emotional peak of
@@ -117,6 +134,17 @@ interior wall colliders with a doorway gap, and the zone logic extended (see §4
 out. First-person view shows the car interior + steering wheel node (`getObjectByName(
 'steering wheel')`). Weapons + flashlight hidden while driving. Ammo 18 start, 2 caches per
 stage, weapons 1/2/3 = light/machete/gun. Map (M): WATER / FOOD / WARMTH / SHELTER / AMMO.
+**THREE drivable cars already exist** — pickup (-6.5, 44), sedan (6.5, -62), station wagon
+(6.5, 250). The Jeep is the FOURTH drivable, not the second. The station wagon sits ~15 m
+from the Day-1 spawn (0, 264) — the most discoverable car in the game (see §6 item 6).
+The driving code has ONE global clamp (`speed = clamp(speed, -4, 11.5)`), one acceleration
+curve, and one steering formula — no per-car fields. Per-vehicle handling (top speed,
+accel, steering) needs per-car parameters added to the car object (see §3b). The driving
+camera depends on the car GLB's `'steering wheel'` node, reparented to `userData.wheel` as
+the driver-seat anchor; if the car GLB fails to load, `drive()` builds a procedural cockpit
+and the seat height changes (`hasCar ? 1.2 : 1.55`). **There is no chase camera anywhere
+in the game** — it is first-person only (see §3b: the Jeep/Norton camera decisions).
+`hitByCar()` kills any mob at speed >4 for 200 damage (mobs within 2.2 m of the car).
 
 **World:** main road runs north–south (z axis) between two dead villages; cottages built
 procedurally (`A6()`) with variants (burnt/moss/dirty) and a door side (`side`, e.g. "W") —
@@ -234,33 +262,33 @@ same slot; nothing else about the dog code path changes.
 
 | Slot (const → var) | Old model | New model | Compatibility / adapter work |
 |---|---|---|---|
-| `q6` → `t.scene` | chicken (154 KB) | **Hen** | **ADAPTER REQUIRED.** Game code needs material `"feather"` and nodes `legL`, `legR`, `head`. The Hen FBX has material `mati_chicken` and a Bip01 rig (no legL/legR/head nodes). In Blender: rename the material to `feather` (keep the roughness/metallic maps + flat diffuse color [191,127,0] — there is NO diffuse texture), add Empty nodes `legL`/`legR` parented to `Bip01_L/R_Thigh` (or Foot — test which reads better) and `head` parented to `Bip01_Head`. Scale: current chicken is `cg(t.scene, .48)` — measure the Hen's bounding box and set the scale so the bird stands ~0.5 m tall in-game. If the FBX has a baked walk/peck take, keep it named and note it; the game drives legs procedurally, so baked clips are a bonus, not a requirement. Sound: kind stays `"chicken"` → hen/rooster MP3 already wired. |
-| `h6` → `M.scene` | cow (357 KB) | **Cow (PENDING download)** | Same adapter pattern as the hen: game needs materials `"hide"`/`"patch"` and nodes `legFL/legFR/legBL/legBR` + `head`. Do NOT swap until the cow file lands and is inspected. If the cow model has no leg nodes, add Empty proxies parented to the nearest leg bones. |
-| `d6` → `Q.scene` | dog (116 KB, **single Cube mesh** — the dog IS a cube) | **Dog (PENDING download)** | The old "dog" is one Cube; the swap replaces it with a real dog GLB in the same slot. Dog/cat use the shader rig (`rig()` — bounding-box leg swing, NO node names needed). Any quadruped-shaped dog GLB works. Verify the shape reads as a dog at 0.95 scale and the leg-swing shader doesn't shear the head (the shader swings vertices below 55% height). |
+| `q6` → `t.scene` | chicken (154 KB) | **Hen** | **ADAPTER REQUIRED — BONE RENAMES, NOT EMPTY PROXIES.** Game code needs material `"feather"` and nodes `legL`, `legR`, `head`, and it ROTATES those nodes to animate the legs (`gait()`). **An Empty parented to a bone is inert on a skinned mesh** — vertices follow bone matrices only, so rotating an Empty rotates nothing in the mesh. The fix is to rename the BONES themselves in Blender: `Bip01_L_Thigh`→`legL`, `Bip01_R_Thigh`→`legR`, `Bip01_Head`→`head`. Bone renaming is safe for skinning (skinning is index-based, not name-based). Then verify in the preview that rotating each renamed bone swings on the expected axis — a bone's local X axis is generally NOT the primitive group's swing axis. Material: rename `mati_chicken` to `feather` (keep the roughness/metallic maps + flat diffuse color [191,127,0] — there is NO diffuse texture). Which Hen meshes carry `mati_chicken` (beak/feet/comb may be separate materials) is listed from the Blender inspection — only meshes whose material is named `feather` get the colour tint in `swap()`. If the `.blend` route is used, verify its textures are packed first (it may reference unpacked external textures). Scale: `cg(t.scene, .48)` scales the FOOTPRINT (max(x,z)=.48), not the height — only `cg(..., P=true)` scales by height. Measure the Hen's bounding box and set the scale so the bird's footprint is ~0.5 m across. If the FBX has a baked walk/peck take, keep it named and note it; the game drives legs procedurally, so baked clips are a bonus, not a requirement. Sound: kind stays `"chicken"` → hen/rooster MP3 already wired. |
+| `h6` → `M.scene` | cow (357 KB) | **Cow (PENDING download)** | Same bone-rename pattern as the hen: rename the leg bones to `legFL/legFR/legBL/legBR` and the head bone to `head` (**NO Empty proxies — they are inert on skinned meshes**). Materials `"hide"`/`"patch"` are material renames (fine). Do NOT swap until the cow file lands and is inspected. If the cow model has no leg bones to rename, the swap is blocked until a rigged cow is found or the code path changes. Scale: `cg(M.scene, 2.6)` is a footprint, not a height. |
+| `d6` → `Q.scene` | dog (116 KB, **single Cube mesh** — the dog IS a cube) | **Dog (PENDING download)** | The old "dog" is one Cube; the swap replaces it with a real dog GLB in the same slot. Dog/cat use the shader rig (`rig()` — bounding-box leg swing, NO node names needed). **Candidate dog GLBs must pass the shader-shear check in §8** — the shader swings vertices below 55% height, and a skinned/rigged GLB dog may double-animate or shear under it; "any quadruped-shaped dog GLB works" is overconfident. Verify the shape reads as a dog at 0.95 footprint (`cg(Q.scene, .95)`) and the leg-swing shader doesn't shear the head. Fallback if it fails: static pose (no leg swing) — do not ship a sheared dog. |
 | `Z6` → `i.scene` | bird (185 KB, `KeyAction` ×3 anims) | **Small bird (PENDING download)** | Game plays `birdClips[0]` if present, else static. If the new bird has a baked flap clip, keep it as clip 0. If it has no animation, the builder adds a code wing-flap (rotate wing nodes) — do NOT ship a frozen bird. (The old "relies on the primitive birds' wing planes" fallback is wrong: the current bird GLB has `KeyAction` anims, not wing planes.) |
 | `W6` → `c.scene` | wreck / car #2 (87 KB) | **Generic Old Car 04** | Direct swap. Verify scale vs the current wreck (measure bounding box) and orientation (front faces the same way — the stranger sits against its side at (2.2, 7.2)). Interior exists (medium detail) — good for the stranger scene. |
-| `_6` → `r.scene` | oak tree (43 KB) | **Honey Locust** (1 of the 6 variants) | Pick the best-looking variant by eye in the preview. The current oak is a single small tree; the Honey Locust is a full tree — measure and scale to match the oak's in-game height. Also add as a 4th variant in the `G` tree array (see §3b). **One embedded const, referenced twice — the oak replacement and the 4th tree variant share the SAME base64 const; do NOT duplicate the bytes.** |
+| `_6` → `r.scene` | oak tree (43 KB) | **Honey Locust** (1 of the 6 variants) | Pick the best-looking variant by eye in the preview. **The `G` tree array CANNOT be extended to a 4th variant this way** — `G` is built by cloning nodes named `leaves`/`tree` with suffixes `''`, `.001`, `.002` from the TREES GLB; the Honey Locust is a separate GLB with different node names and no `.003` variant. A second Locust variant needs its OWN loader path (own node names, measured-height scaling) — write it separately and leave the `G` suffix loop untouched. The oak uses `r.scene` RAW (no `cg()`), so the Locust must match the oak's native scale, not a `cg()`-normalized one. **One embedded const, referenced twice — the oak replacement and the 4th tree variant share the SAME base64 const; do NOT duplicate the bytes.** |
 
 ### 3b. Additions (new consts / new code paths — no old slot removed)
 
 | New object | Source | Integration |
 |---|---|---|
-| **Mob humanoids** (replaces `LS()` primitive builder) | Worker Character (male) · Wild Stylized Girl (female) · Zane Ryder (extra) | New loader entries + a mob-model pool. Mob groups get a MIX of the three bodies (random male/female, no names). **Adapter:** game code rotates `M.h.torso` and `M.h.head`. The Worker HAS a `head` node but NO `torso` node (spine_01/02/03 exist). Add an Empty node `torso` parented to `spine_02` in Blender (same for Girl/Zane — verify their node names first). **Animation:** none of the three is confirmed to have baked walk/run clips — **all animation claims are UNVERIFIED until Blender inspection at §9 step 1** (a `strings` grep cannot prove a clip is absent: Worker shows a `Takes` node, Girl shows `MultiTake` ×15). The builder drives the walk procedurally: rotate thigh/calf bones (or the whole leg groups) with `sin(phase)` in the mob update loop, mirroring the existing `gait()` pattern; swing arms opposite; lean `torso` forward slightly on chase. If a baked walk clip IS found in any of the three, prefer it for that body. Verify in Blender before deciding. **Walk gate:** the procedural walk is judged by a headless frame-sequence capture (§9) — the coordinator judges it; stiff = reject, bake a walk cycle in Blender (§10 item 1). Mob HP (55), speed, weapon (cleaver/bat/pipe/crowbar — keep the existing weapon meshes for now; the new models' hands hold them) and spawn logic are UNCHANGED. **Mob weapons stay primitive in this build** (no CGTrader mob-weapon models were ordered) — see the residual-boxy list in §3c. |
-| **Wounded Stranger** (replaces `P6()` primitive sitter) | Worker Character, seated pose | High priority — this is the Day 2 emotional peak. Pose: seated, back against the sedan, one leg bent with the rag/blood detail. Implement the pose in Blender (rotate spine/hips/thighs, bake the pose into the exported GLB) OR in code (rotate bones at spawn). Prefer the Blender-baked pose — simpler and it can't drift. Keep the breathing animation (currently `torso.rotation.x` wobble) — drive it through the `torso` proxy node. |
-| **Shotgun viewmodel + world pickup** | Remington Model 31 (PENDING) | Replaces the primitive gun viewmodel (`vms.gun`). **Needs a muzzle anchor node** (the muzzle-flash effect attaches to it) — add an Empty named `muzzle` at the barrel tip in Blender. World pickup: place 1–2 shotguns as pickups near ammo caches (they are the same model at world scale). Keep the existing gun stats (ammo, damage, shotCd) — this is a visual swap, not a balance change. |
-| **Machete viewmodel + world pickup** | Machete (PENDING) | Replaces the primitive machete viewmodel (`vms.machete`). The swing animation is code-driven (viewmodel rotation) — the new model must be oriented so the blade points the same way as the old one (verify in the preview against the old viewmodel's rest pose). |
-| **Flashlight viewmodel** | Yellow flashlight (PENDING) | Replaces the primitive light viewmodel (`vms.light`). The actual light cone (`this.flashlight` spotlight) is unchanged — only the in-hand model swaps. Verify the model has a lens/front face the light can plausibly come from; if the model is yellow plastic, keep the yellow — it reads on camera. |
-| **Norton Manx** (rideable) | 1947 Norton Manx | NEW vehicle system. Reuse the car driving code path with a bike variant: same W/S/A/D/SPACE/E controls, same no-reversed-steering rule, arcade handling, lean visual on turns (roll the bike + rider into the turn), top speed ~12 (between car 11.5–13). **Camera decision (settled): first-person, handlebars + front wheel visible, NO visible rider body** — the same rule as the car (interior + wheel, no body). A visible seated rider and a first-person view cannot both be true; the first-person view wins. (If a chase cam is ever chosen for the bike, the rider IS visible seated — but that is not this build.) Wheels: the chain/wheels have individual pieces — verify the front/rear wheel nodes are separable so they can spin with speed. **Decimate 404k faces → ≤50k.** |
-| **Jeep Renegade** (the car Kes finds and drives) | 2016 Jeep Renegade | NEW entry in `world.cars` (the car system already supports a list — `nearCar()` iterates it). **THE CAR KES FINDS AND DRIVES IN THE CHASE — primary drivable + chase vehicle (Kester, 2026-11-11: "nah swap that shitty car lol").** Kes finds it after a stage mission (chase gate) and drives it in the chase. No car belongs to anyone — it is found, not owned. Handling: heavier, top speed ~10, more stable (less slide). Interior: verify on download; if none, chase cam for the Jeep only. Add a map POI for it once discovered (see §6 item 6). The sedan (`u6`/`P.scene`) stays in the world as the second drivable in free roam (see §3c). |
-| **Military Truck** (scene/wreck) | Military Truck (PENDING) | Place as a roadblock landmark on the main road (north half), with collision. Mission site: searching the truck bed gives a supply pickup (see §6 item 1). NOT drivable in this build. |
+| **Mob humanoids** (replaces `LS()` primitive builder) | Worker Character (male) · Wild Stylized Girl (female) · Zane Ryder (extra) | New loader entries + a mob-model pool. Mob groups get a MIX of the three bodies (random male/female, no names). **Adapter — BONE RENAMES, one scheme, decided now.** The mob update loop writes SIX slots unguarded every frame (`legL/legR` gait, `armL` counter-swing, `armR` windup −2.5 / recover, `torso` rotation.z/x, `head` rotation.x=.18 on chase) — no optional chaining, no fallback. A mob GLB missing ANY slot throws a `TypeError` every frame or leaves the mob frozen. **The doc chooses scheme (i): the Blender adapter maps real bones to the exact slots the loop expects.** Rename the bones in Blender per body: thigh groups → `legL`/`legR`, upper-arm groups → `armL`/`armR`, `spine_02` → `torso`, head bone → `head`. (Bone renaming is safe — skinning is index-based.) NO Empty proxies for animation — an Empty parented to a bone is inert on a skinned mesh. **Empties ARE still fine as static attach points** (they follow the bone they are parented to): the weapon socket is an Empty parented to the `armR`/hand bone — the primitive builder parents the weapon to an arm child, and the new hands need the same attach point. **Headshot heights:** `ray()` uses hardcoded heights 1.64/1.1 m, not the head node — re-derive them from the model (or from `M.h.head` world position) per body, or headshots misalign on taller/shorter mobs. **Animation:** the builder drives the walk procedurally (rotate the renamed bones with `sin(phase)` in the mob update loop, mirroring the existing `gait()` pattern; swing arms opposite; lean `torso` forward slightly on chase). **Baked walk clips are NOT the plan** — the code has NO AnimationMixer for mobs (mixers exist only for birds/fire), so "prefer a baked walk clip" is unimplementable without adding a mixer (a scoped code change the builder does NOT make unless the coordinator approves it). If a baked walk clip IS found in any of the three, note it; the procedural walk is the default. Verify in Blender before deciding, and verify in the preview that rotating each renamed bone swings on the expected axis. **Walk gate (§8/§9):** the mob GLB must expose all six animation slots + the weapon socket, verified by GLB JSON + a headless walk-cycle frame-sequence capture — the coordinator judges it; stiff = reject, bake a walk cycle in Blender (§10 item 1). Mob HP (55), speed, weapon (cleaver/bat/pipe/crowbar — keep the existing weapon meshes for now; the new models' hands hold them via the weapon socket) and spawn logic are UNCHANGED. **Mob weapons stay primitive in this build** (no CGTrader mob-weapon models were ordered) — see the residual-boxy list in §3c. |
+| **Wounded Stranger** (replaces `P6()` primitive sitter) | Worker Character, seated pose | High priority — this is the Day 2 emotional peak. Pose: seated, back against the sedan, one leg bent with the rag/blood detail. Implement the pose in Blender on a SEPARATE COPY of the Worker file: rotate spine/hips/thighs, then Pose → Apply Pose as Rest Pose (glTF exports the rest pose + animations — a Pose-Mode pose does NOT survive export otherwise, and applying it as the rest pose destroys the rig for reuse, hence the copy). Keep the breathing animation — drive it through the renamed `torso` bone — BUT retune the baseline: the current `oP.rotation.x=.25` was tuned for the primitive torso and will permanently hunch the seated figure on a `spine_02` bone. Retune in the preview. |
+| **Shotgun viewmodel + world pickup** | Remington Model 31 (PENDING) | Replaces the primitive gun viewmodel (`vms.gun`). **Needs a muzzle anchor node** (the muzzle-flash effect attaches to it) — add an Empty named `muzzle` at the barrel tip in Blender (an Empty is fine here: it is a static anchor for the flash effect, not a skinned bone). **Viewmodel integration spec:** viewmodels are built SYNCHRONOUSLY by primitive builders (`bS`/`OS`) returning `{g, muzzle}`; the gun's rest position/rotation are hardcoded in `vmBase` (gun at (.22, −.2, −.32)) and the muzzle-flash class consumes `i.muzzle`. The builder PRELOADS the shotgun GLB at startup and the viewmodel builder CLONES the loaded scene (it cannot parse a GLB synchronously). Per-weapon scale + `vmBase` retuning verified by first-person screenshots. **World pickup: DELETED as specified** — the player already owns all three weapons (keys 1/2/3, ammo 18 at start), so a pickup granting a weapon they already have does nothing, and there is no pickup code path for it (`nearestSupply` handles only POI and ammo; caches are re-randomized every stage by `spawnAmmo()`, so there is no fixed "near" to put anything). If a shotgun pickup is wanted, it must grant something real (e.g. +6 shells) with a defined `nearestSupply` kind, radius, and fixed coordinates — decided in §6 item 1, not here. Keep the existing gun stats (ammo, damage, shotCd) — this is a visual swap, not a balance change. |
+| **Machete viewmodel + world pickup** | Machete (PENDING) | Replaces the primitive machete viewmodel (`vms.machete`). Same loader pattern as the shotgun (preload at startup, clone into the synchronous builder; `vmBase` retuning per weapon). The swing animation is code-driven (viewmodel rotation) — the new model must be oriented so the blade points the same way as the old one (verify in the preview against the old viewmodel's rest pose). World pickup: same as the shotgun — deleted as specified (the player already owns the machete). |
+| **Flashlight viewmodel** | Yellow flashlight (PENDING) | Replaces the primitive light viewmodel (`vms.light`). Same loader pattern as the shotgun (preload, clone, `vmBase` retuning). The actual light cone (`this.flashlight` spotlight) is unchanged — only the in-hand model swaps. Verify the model has a lens/front face the light can plausibly come from; if the model is yellow plastic, keep the yellow — it reads on camera. |
+| **Norton Manx** (rideable) | 1947 Norton Manx | NEW vehicle system. Reuse the car driving code path with a bike variant: same W/S/A/D/SPACE/E controls, same no-reversed-steering rule, arcade handling, top speed ~12 (between car 11.5–13). **Camera decision (settled): first-person, handlebars + front wheel visible, NO visible rider body** — the same rule as the car (interior + wheel, no body). A visible seated rider and a first-person view cannot both be true; the first-person view wins. **Lean = camera roll in first-person** (the car code already rolls the camera: `rotation.z = -s*R*.004`) — specify lean as a camera-roll value, not a model roll. First-person anchors (handlebar node name, camera height/offset) are specified at build time from the model — the bike has no steering-wheel node, no cockpit, no seat height, so the builder defines them. **Per-vehicle parameters (new — the driving code has one global clamp, no per-car fields):** top speed, accel, steering factor, seat height + anchor node, camera mode — added to the car object per vehicle. Wheels: the chain/wheels have individual pieces — verify the front/rear wheel nodes are separable so they can spin with speed. **Decimate 404k faces → ≤50k.** **Spike-test:** the Norton is one of the riskiest conversions (119 objects, 404k faces) — spike-test it FIRST (§9 step 1), before the Hen proves the pipeline. **Settled-chase constraint:** the bike must work as a pirate vehicle (Appendix A). |
+| **Jeep Renegade** (the car Kes finds and drives) | 2016 Jeep Renegade | NEW entry in `world.cars` (the car system already supports a list — `nearCar()` iterates it). **THE CAR KES FINDS AND DRIVES IN THE CHASE — primary drivable + chase vehicle (Kester, 2026-11-11: "nah swap that shitty car lol").** Kes finds it after a stage mission (chase gate) and drives it in the chase. No car belongs to anyone — it is found, not owned. **Per-vehicle parameters (new):** top speed ~10, accel, steering factor (heavier, more stable = less slide), seat height + anchor node, camera mode — added to the car object (the driving code has one global clamp, no per-car fields). **Camera decision (settled):** first-person IF the Jeep has an interior (verify on download). **If it has NO interior, the Jeep is NOT drivable in this build as a first-person vehicle — the fallback is a scoped chase-camera build** (third-person camera behind + above the vehicle, same W/S/A/D controls), explicitly scoped as a new camera system, NOT a silent "decide at build time". The builder does NOT silently ship a chaseless Jeep, and does NOT "reuse the sedan interior framing" (the sedan interior is part of the sedan GLB and cannot be reused). **Interior gate:** the Jeep's drivability is gated on the download inspection — interior confirmed → first-person chase car; no interior → chase-cam scope decision, with Kester told plainly. Add a map POI for it once discovered (see §6 item 6). The three existing cars (pickup, sedan, station wagon) stay drivable in free roam. **Settled-chase constraint:** the Jeep must work as the chase car (Appendix A). |
+| **Military Truck** (scene/wreck) | Military Truck (PENDING) | Place as a roadblock at (0, -80), angled across the main road, with collision — see §4 placements. It blocks the road for VEHICLES (full-width; cars cannot pass) with a ≥1.5 m pedestrian gap on the west side, so the last ~20 m to the checkpoint is always on foot. Mission site: searching the truck bed gives a bandage pickup — reach-from-ground radius 2 m at the tailgate (the bed is ~1.5 m up; no climb mechanic exists; the pickup sits at the tailgate, outside the truck's collision footprint — `nearestSupply` measures 2D distance). NOT drivable in this build. **Settled-chase constraint:** the truck must be promotable to a villain war-rig (Appendix A) — keep its GLB intact for that. |
 | **Medieval house** (enterable) | Medieval house/cabin (PENDING) | See §4. |
 | **Windmill** (enterable) | Windmill (PENDING) | See §4. |
 | **Small village** (3 enterable homes) | Small village (PENDING) | See §4. |
 | **New York buildings** (filler) | New York buildings (PENDING) | Skyline/backdrop at the map edges (beyond the playable clamp, x ±112 / z -112..114). No collision needed beyond the map bounds. No interiors. |
-| **L_build_1/2/3** (filler) | glb.rar (origin TBD) | Street filler buildings inside the villages. **They have NO materials** — check in Blender for vertex colours; if untextured, apply the game's brick/plaster texture set. Use LOD0 in-game (LOD1/2 are for distance — the game doesn't do LOD switching, so ship LOD0 only). Do NOT ship until origin/license is confirmed from the browser report. |
-| **Concrete House 003** (filler) | export_concrete_house_003.zip (origin TBD) | Modern house filler (LOD1). Do NOT make it enterable in this build (no interior data). Do NOT ship until origin/license is confirmed. |
-| **Maxtree grasses** (terrain) | 6 grass FBXs | Replace the instanced grass-tuft geometry: the game draws 4400 instanced tufts from one crossed-plane geometry. Swap the tuft geometry for 2 Maxtree grass species (Cynodon + Zoysia — the smallest, most grass-like), **one InstancedMesh per species (2 total)**, per-plant budget ≤2k polys, and REDUCE the instance count to ~1500–2500 total (full 3D plants cost more than crossed planes; ~2,000 × ~2k polys ≈ 4M polys needs the §9 fps gate). Keep the same placement rules (the `gA` exclusion zones around buildings/roads). |
-| **Honey Locust** (tree variety) | 1–2 of 6 variants | Add as a 4th variant in the `G` tree array (the loader rebuilds 3 variants from the trees GLB; extend to 4) AND replace the oak const (`_6`/`r.scene`). Do not embed more than 2 variants. |
+| **L_build_1/2/3** (filler) | glb.rar (origin TBD) | Street filler buildings inside the villages. **They have NO materials** — the game's retexturing (`Rw()`) keys off material names, so materials must be AUTHORED in Blender (assign brick/plaster materials with names the game can key off), not "applied from a set". Check in Blender for vertex colours first. Use LOD0 in-game (LOD1/2 are for distance — the game doesn't do LOD switching, so ship LOD0 only). Do NOT ship until origin/license is confirmed from the browser report. |
+| **Concrete House 003** (filler) | export_concrete_house_003.zip (origin TBD) | Modern house filler (LOD0 — LOD0 is the highest detail). Do NOT make it enterable in this build (no interior data). Do NOT ship until origin/license is confirmed. |
+| **Maxtree grasses** (terrain) | 6 grass FBXs | Replace the instanced grass-tuft geometry: the game draws 4400 instanced tufts from ONE `InstancedMesh` with ONE geometry (0.9×0.7 plane) and ONE material (alphaTest .35, DoubleSide). **One InstancedMesh cannot mix species "randomly per instance".** Each Maxtree species is a multi-mesh, multi-material plant — it must be MERGED/BAKED into one geometry + one material PER SPECIES (merge step in §7), then one InstancedMesh per species (2 species: Cynodon + Zoysia — the smallest, most grass-like), per-plant budget ≤2k polys, instance count ~1500–2500 total (full 3D plants cost more than crossed planes; ~2,000 × ~2k polys ≈ 4M polys needs the §9 fps gate). Material: alphaTest .35 handling per species (Maxtree grasses are typically alpha-tested leaf cards). Keep the same placement rules (the `gA`/`iA` exclusion zones around buildings/roads). |
+| **Honey Locust** (tree variety) | 1–2 of 6 variants | See the oak row in §3a: one Locust variant replaces the oak const (`_6`/`r.scene`); a second variant needs its OWN loader path (the `G` suffix loop cannot be extended). Do not embed more than 2 variants. |
 
 ### 3c. Keep as-is (no swap)
 - `u6`/`P.scene` car (sedan) — **no longer the chase car.** The Jeep is the car Kes finds
@@ -287,16 +315,46 @@ trees stay as-is. Kester is told plainly: these are the accepted remainder, not 
 
 **Principle:** an enterable building = (1) a doorway cut in the wall, (2) interior wall colliders
 with a gap at the doorway (the world's collider system is `Box3` lists — split each wall into
-segments around the door), (3) an interior floor + walls the player can see from inside (no
-backface culling tricks — the inside faces must be rendered), (4) a `shelters` rect entry so
-`inShelter()` recognises it (warmth/health recover, mob will not enter), (5) a door mesh with
-a knob that glows on approach (§5), (6) furniture/props inside so the interior isn't an empty box.
+segments around the door), (3) an interior floor + walls the player can see from inside —
+CGTrader exteriors are typically single-sided, so the builder uses **DoubleSide materials**
+on the interior wall materials (verified from inside in the preview) or a separate interior
+shell, with the cost/verification noted — no backface-culling tricks, (4) a `shelters` rect
+entry so `inShelter()` recognises it (warmth/health recover, mob will not enter) — the rect
+is measured from the ACTUAL interior footprint in the preview, NOT copied `w/2-.35` from the
+cottages (new buildings have unknown wall thicknesses; the cottage margin may put the rect
+through the walls), and **shelter applies ONLY while the door is shut** — if the door stands
+open, the shelter buff stops and mobs may enter (the glow rule's whole point is that a shut
+door is the boundary), (5) a door mesh with a knob that glows on approach (§5), (6)
+furniture/props inside so the interior isn't an empty box. **Interior lighting: flashlight
+only** — no interior lights; on Days 1–2 daylight comes through the doorway/windows, on
+Night 3 the player's flashlight is the light source.
+
+**Placements — every placed object gets (x, z, rotation) + a clearance rule, verified against
+the bundle's collider/POI/marker lists before §9 step 8:**
+
+| Object | Placement (x, z, rotation) | Clearance rule |
+|---|---|---|
+| Medieval house | (-30, -44), facing east (door toward the road) | ≥10 m from the Alley Fire Site marker (-21, -44, radius 3.4); ≥8 m from the road centreline (x=0); ≥5 m from any cottage / supply POI. |
+| Windmill | (30, -60), facing west (door toward the road) | ≥10 m from the Field Lab marker (15.8, -44); ≥8 m from the road centreline; ≥5 m from any cottage / POI. NO ladder to an upper floor in this build — single floor only (the ladder is deleted from the plan: `ladderAt`/`ladders` registration, upper-floor collider, and `inShelter()` returning false above 3 m are all unscoped). |
+| Small village (4 homes) | Cluster anchor (-35, -70); homes spread ±15 m around it, doors facing the cluster centre | ≥15 m from the road centreline (x=0) — the cluster sits OFF the route to the checkpoint, not on it; ≥10 m from the checkpoint approach corridor; ≥5 m between homes; ≥5 m from any POI/marker. |
+| Military Truck | (0, -80), angled ~30° across the main road | Full-width vehicle block with a ≥1.5 m pedestrian gap on the WEST side. The last ~20 m to the checkpoint is always on foot (see §3b). |
+
+**Placement verification (§9):** a headless top-down screenshot OR a collider dump showing no
+overlaps between the new placements and the existing cottages, 11 supply POIs, 8 decision
+markers (radius 3.4), ammo-cache exclusion zones, the road, and the extraction route to the
+checkpoint (0, -102). A placement that overlaps is moved before its swap commits.
+
+**Known difference (accepted):** the procedural cottages keep their position-zone shelter
+while the new buildings have real doors. The player can stand outside a solid cottage wall
+and regenerate — this is the existing fiction, unchanged. A cottage-doorway pass is a later
+build, not this one. The cottage GLB (`H6`/`B.scene`) is traced before §9 step 8 and stays
+as-is; it is NOT an enterable building in this build.
 
 | Building | Enterable? | Interior state | Plan |
 |---|---|---|---|
-| Medieval house | ✅ YES (page: "fully ENTERABLE") | EMPTY — "waiting for you to add your props" | Cut doorway (verify the source model has a door opening; if the wall is solid, cut it in Blender). Furnish: table + bed + crates. Furniture source: first check whether the small-village file has separable furniture meshes — if yes, reuse them; if no, furnish from the in-game prop library (crate/barrel) + a simple table/bed built from the house's own plank textures. Flag as "furnish pass 2" if the first pass is thin. Place as a mission interior for Day 2/3 (near the Alley Fire Site / The Field Lab). |
-| Windmill | ✅ YES (page: "fully ENTERABLE") | EMPTY | Same as the house, lighter furnishing (sacks, barrels, a ladder to the upper floor if the model has one — single floor is acceptable for this build). Place as a landmark + mission interior on the village edge. |
-| Small village (4 homes) | ✅ 3 of 4 (2 furnished, 1 empty, 1 CLOSED) | 2 furnished (ready), 1 empty (furnish lightly), 1 closed (stays shut) | Place as a distinct second village cluster (north end, near the checkpoint road). The 2 furnished homes are ready-made mission interiors. The Day 3 shelter decision ("Where to Sleep") marker stays where it is — the village homes grant shelter buffs through their own `inShelter()` rects but do NOT move the decision. The CLOSED home: no glow, no entry, solid collider — it is a deliberate "not this one" that makes the glow rule readable. |
+| Medieval house | ✅ YES (page: "fully ENTERABLE") | EMPTY — "waiting for you to add your props" | Cut doorway (verify the source model has a door opening; if the wall is solid, cut it in Blender). Furnish: table + bed + crates. Furniture source: first check whether the small-village file has separable furniture meshes — if yes, reuse them; if no, furnish from the in-game prop library (crate/barrel) + a simple table/bed built from the house's own plank textures. Flag as "furnish pass 2" if the first pass is thin. Place at (-30, -44) — a mission interior for Day 2/3 (near the Alley Fire Site / The Field Lab). |
+| Windmill | ✅ YES (page: "fully ENTERABLE") | EMPTY | Same as the house, lighter furnishing (sacks, barrels). Single floor only — NO ladder to an upper floor in this build (see the placements table). Place at (30, -60) as a landmark + mission interior on the village edge. |
+| Small village (4 homes) | ✅ 3 of 4 (2 furnished, 1 empty, 1 CLOSED) | 2 furnished (ready), 1 empty (furnish lightly), 1 closed (stays shut) | Place as a distinct second village cluster, anchor (-35, -70), homes spread ±15 m, ≥15 m off the road centreline (see the placements table). The 2 furnished homes are ready-made mission interiors. The Day 3 shelter decision ("Where to Sleep") marker stays where it is — the village homes grant shelter buffs through their own `inShelter()` rects but do NOT move the decision (the decision triggers at the fixed Cellar Hatch marker (17.8, -38.5, radius 3.4); adding shelter rects elsewhere doesn't "wire" anything to it). The cluster is ~60 m+ from the hatch, in the dark, on Night 3 — the homes are usable shelter that night, the decision itself stays at the hatch. The CLOSED home is the fourth home, north-east in the cluster, boarded door: no glow, no entry, solid collider. E on it gives a "Locked — boarded shut" toast (a player who presses E and gets nothing reads it as broken, not deliberate). Its knob is present but NEVER emissive. |
 | New York buildings | ❌ filler only | — | Skyline/backdrop. No doorway, no interior, no glow. |
 | Medieval block (Lumion scene) | ❌ filler only (probably unusable — Lumion format) | — | If the download is a Lumion `.ls` scene, SKIP it for this build. Do not spend build time converting render scenes. |
 | Archviz scene | ❌ deferred | — | 491 MB Blender render file. Not for this build. |
@@ -339,26 +397,49 @@ knob glows — so the player knows that door can be opened and entered.
 
 **Implementation (design, not code):**
 - Each enterable building gets a door assembly: a door panel mesh + a knob mesh (small
-  sphere/cylinder) parented to the door, on the outside face, at handle height (~1 m).
-  If the source model has no separate door mesh, the builder adds a simple panel + knob in
-  Blender at the doorway (wood material, matches the building).
-- Proximity check in the player update loop (same place `nearestInteractable()` runs):
-  for each shut enterable door, if the player is within **4 m** of the knob, set the knob
-  material emissive to warm gold (`#ffb347`, emissiveIntensity pulsing 0.6–1.2 with a slow
-  sine) and show the hint "E — open door" when within 2 m. Beyond 4 m the knob is its
-  normal material (no glow, no light — cheap: emissive only, NO extra point light).
-- On open (E): the door swings on its hinge (rotate ~100° over 0.4 s), the glow stops, the
-  door collider is removed, and the interior is walkable. On close (E again from inside, or
-  walking away + a timeout — pick E-only for clarity): the door swings shut and the collider
-  returns. The closed village home NEVER glows and NEVER opens.
+  sphere/cylinder, **≥6 cm diameter** — a 3 cm knob at 3 m in the dark may be sub-pixel)
+  parented to the door, on the outside face, at handle height (~1 m), PLUS a knob/handle
+  on the INSIDE face so closing from inside works (glow + hint on the inside face when
+  within 2 m). If the source model has no separate door mesh, the builder adds a simple
+  panel + knob in Blender at the doorway (wood material, matches the building).
+- **Hinge pivot:** rotating a door panel mesh rotates about its CENTRE, not a hinge. The
+  builder creates a hinge pivot in Blender (pivot at the hinge edge; the door panel is
+  re-parented to it) and the door swings on that pivot (~100° over 0.4 s). Swing
+  direction: INWARD (into the building), hinge on the left as seen from outside.
+  **Blocked-doorway rule:** if the player stands in the swing arc/doorway when closing,
+  the door refuses to close and shows a "move clear" hint — it never pushes the player.
+- **Knob material:** the knob gets its OWN cloned material instance per door. Setting
+  emissive on a shared material would tint the whole door/building.
+- **Per-frame hook:** `nearestInteractable()` does NOT run per frame — it is a query called
+  from `tryInteract()`/`pushHud()`. The glow needs a per-frame tick: use the world's
+  per-frame closures (the `i.push((d,u)=>…)` pattern) as the update owner, and integrate
+  with the existing hint/prompt display. For each shut enterable door, if the player is
+  within **4 m** of the knob, set the knob material emissive to warm gold (`#ffb347`,
+  emissiveIntensity pulsing 0.6–1.2 with a slow sine) and show the hint "E — open door"
+  when within 2 m. Beyond 4 m the knob is its normal material (no glow, no light — cheap:
+  emissive only, NO extra point light). **Interaction radius: ONE radius** — glow at 4 m,
+  hint + open at 2 m.
+- **E-key slot:** doors are a FIFTH interactable with an explicit slot in BOTH
+  `tryInteract()` and the `pushHud()` prompt chain: driving → `nearCar()` → DOOR →
+  `nearestSupply()` → `nearestInteractable()`. A supply POI next to a door no longer
+  shadows it, and a decision marker next to a door no longer shadows it. While driving, E
+  near a door does nothing (you cannot open a door from a vehicle).
+- On open (E): the door swings on its hinge pivot, the glow stops, the door collider is
+  removed, and the interior is walkable. **Collider hook (verify first):** `colliders` is
+  a plain Box3 array — verify `blocked()` live-reads that array (vs a prebuilt structure)
+  before relying on dynamic removal. If it doesn't, the door collider is a separate entry
+  the builder toggles, or the doorway gap stays permanently open in the collider set with
+  the SHUT door itself as the collider. On close (E again from inside): the door swings
+  shut and the collider returns. The closed village home NEVER glows and NEVER opens.
 - The glow must also be visible at night (stage 3) — emissive is unlit, so it reads in the
   dark. This is the point of the feature on Night 3.
 - Verification: headless screenshot at 3 m from a shut door shows a visible gold knob;
-  at 6 m it does not. Live check on the Pages preview by walking up to a door.
+  at 6 m it does not. Headless positioning: scripted camera pass or a debug teleport query
+  param (the doc names the method — no harness, no verification). Live check on the Pages
+  preview by walking up to a door. **§8 gate: E at a door next to a car opens the door,
+  not the car.**
 - **Multi-door rule:** if more than one shut enterable door is in range, ONLY the nearest
   glows — one glow at a time, so the rule stays readable.
-- **E-key precedence near a door:** door > pickup > decision. While driving, E near a door
-  does nothing (you cannot open a door from a vehicle).
 - **Knob visibility criterion:** in the 3 m headless screenshot the knob must be ≥8 px
   across and gold-distinct from the door panel; at 6 m it does not glow.
 
@@ -368,54 +449,96 @@ knob glows — so the player knows that door can be opened and entered.
 
 Verified gaps in the current flow (from reading the bundle) and the fix for each.
 Scope: implement items 1, 2, 4, 6, 7, 9, 12, 13, 14 in this build. Items 3, 5, 8, 10 are
-verify-only (no code unless verification finds them broken). Item 11 rides on the
+verify-only — each with a named check (owner: coordinator): item 3 — observe the HUD stat
+bars in a headless playthrough screenshot set immediately after choosing (bars must move
+within 1 frame of the choice); item 5 — verify the yellow-flashlight viewmodel is in hand
+on Night 3 in a first-person screenshot; item 8 — verify fire damage is 16/sec in a
+headless test (stand in fire 1 s, health −16); item 10 — verify the hen sound plays for the
+new Hen model (kind `"chicken"` → hen/rooster MP3) in a headless audio check. A verify-only
+item with no method is skipped silently — the check IS the method. Item 11 rides on the
 Worker/stranger swap (§3b).
 
 1. **Dead time between decisions (HIGH).** Each stage is: walk to marker A, walk to marker B,
-   walk to the checkpoint — across a ~224 m map on foot at ~4–5 m/s, with nothing to do in
-   between except wandering animals and periodic mobs. **Fix:** add 1–2 supply pickups per
-   stage (water jugs +20 thirst, ration boxes +20 hunger, bandages +10 health), placed
-   between the decision markers, marked on the map (reuse the existing map-marker code and
-   the WATER/FOOD categories). Bandages (+health) have no map category today
-   (WATER/FOOD/WARMTH/SHELTER/AMMO only) — add a HEALTH map category for them. Pickups sit
-   at fixed waypoints between the decision markers (not random) and do NOT despawn — they
-   persist until picked up. The Military Truck bed is one pickup site (search the truck).
-   This turns the walk into a route with reasons to stop. **Trade-off (standing principle):**
-   every pickup also makes the player a bigger target — mob spawn pressure scales with how
-   much the player is carrying (see the principle at the top of this doc). Picking up
-   supplies is a choice between having more and being more of a target, not a free win.
+   walk to the checkpoint — across a ~406 m map on foot at ~4–5 m/s (the Day 1 route alone
+   is ≈381 m: spawn (0,264) → Well (7,48) → Pantry (-14.8,38) → checkpoint (0,-102) =
+   76–95 s of pure walking, before mobs or detours), with nothing to do in between except
+   wandering animals and periodic mobs. **The pickup system ALREADY EXISTS — this item is a
+   modification, not a new system.** `nearestSupply()`/`takeSupply()` are already wired
+   into `tryInteract()` (priority: driving → `nearCar()` → `nearestSupply()` →
+   `nearestInteractable()`), fed by 11 FIXED `world.pois` (water jugs e.g. (-9,52), (7,-20),
+   (9,232); ration boxes e.g. (9,66.5), (-8,-12)) giving **+35 thirst / +30 hunger**
+   (NOT +20/+20), radius 2.4, already shown on the map via `sitesOf("water"/"food")`.
+   `advanceStage()` never resets them — it only calls `spawnAmmo()` and `mobs.clearAll()` —
+   so they are ONE-SHOT for the whole game, not per stage. **Fix:** (a) restock all 11 POIs
+   in `advanceStage()` (per stage), keep the +35/+30 values (no reason to nerf them); (b)
+   add BANDAGES as a genuinely new pickup kind (+10 health) with its own `nearestSupply`
+   kind, a HEALTH map category, fixed waypoints between the decision markers, and an
+   `advanceStage()` reset — bandages do not despawn within a stage. The Military Truck bed
+   is one bandage pickup site (reach-from-ground radius 2 m at the tailgate, §3b).
+   **Inventory first:** the builder counts the existing `world.pois` (count, type, position,
+   stage) at build start — the 5 positions above are examples; the remaining 6 come from
+   the inventory. **Trade-off (standing principle):** every pickup also makes the player a
+   bigger target — mob spawn pressure scales with how much the player is carrying (see the
+   principle at the top of this doc). Picking up supplies is a choice between having more
+   and being more of a target, not a free win.
 2. **No guidance on where to go (HIGH).** Markers exist but the player must open the map (M)
-   to find them; a first-time player wanders. **Fix:** an objective compass arrow at the
-   screen edge pointing to the nearest incomplete decision marker, with a distance readout
-   in metres. Keep the map as the detail view. Reuse the existing marker positions — no new
-   data needed.
+   to find them; a first-time player wanders. **Fix:** an objective compass arrow (DOM
+   overlay at the screen edge) pointing to the nearest incomplete decision marker, with a
+   distance readout in metres. **Extraction phase:** once both stage decisions are done,
+   there is no incomplete marker — the arrow switches to the green flare/checkpoint
+   (0, -102). **While driving** the arrow stays visible (the player most needs it then).
+   Keep the map as the detail view. Reuse the existing marker positions — no new data needed.
 3. **Decision stakes are abstract (verify-only).** Choices are picked blind (rank hidden until
    after) and the lesson shows after — that is the design, keep it. Verify the HUD stat bars
    animate immediately on choosing, so the consequence is visible. If they don't, wire it.
 4. **Day 4 is thin (MEDIUM).** Radio + signal, then an empty walk to the checkpoint = win.
    The helicopter decision is the climax but nothing pushes back. **Fix:** a final mob surge
-   on Day 4 — once extraction is active, one last group (4–6, mixed bodies) spawns between
-   the player and the checkpoint with the toast "One last push — they are between you and
-   the flare." Spawn math: at the midpoint of the player→checkpoint line, offset 15–25 m
-   to the side. Guard: only if the player is >30 m from the checkpoint; if the player is
-   already at the checkpoint or mid-decision-popup, delay the surge until the popup closes
-   and the player is >30 m out. The walk to the checkpoint becomes the final fight-or-flight.
+   on Day 4, built as a SEPARATE one-shot spawn (not the normal spawner). **Trigger** — the
+   moment extraction goes active on Day 4 (the checkpoint toast / flare becoming visible —
+   name the exact code hook at build time). **Spawn** — one group (4–6, mixed bodies)
+   placed DIRECTLY on the road between the player's position and the checkpoint, bypassing
+   the normal spawner's rules (the normal spawner only counts down while zero mobs are
+   alive, only picks building corners 42–95 m away, and `advanceStage()` calls
+   `mobs.clearAll()` with `spawnT=40` — none of that applies to the surge; it is a direct
+   `spawnGroup()` call with explicit positions). **Provoked on spawn** — the surge group is
+   marked provoked (exempt from `unprovoked()` −10/−25), or the climax punishes the player
+   for fighting it. **On foot, by design:** the Military Truck roadblock at (0, -80) stops
+   the car — the player MUST continue on foot from the truck to the checkpoint (~20 m) —
+   so the surge is a genuine on-foot fight, not a drive-by (`hitByCar()` kills any mob at
+   speed >4 for 200 damage, and the checkpoint win triggers on proximity within 7 m — if
+   the player could drive through, the "final fight" would be trivial). Toast: "One last
+   push — they are between you and the flare." The walk to the checkpoint becomes the final
+   fight-or-flight.
 5. **Night 3 is the only night (no change).** Flashlight matters most here. No flow change;
    the yellow-flashlight viewmodel swap (§3b) lands globally, which is the improvement.
-6. **Vehicles are undiscoverable (MEDIUM).** The Jeep (the car Kes finds and drives) exists
-   in the world but nothing points at it; a player can finish Day 1 on foot without knowing
-   it exists.
-   **Fix:** once the player comes within 30 m of a vehicle (Jeep / sedan / bike), add a map
-   POI ("Jeep", "Car", "Bike") and a one-time toast ("A working Jeep — E to drive"). Same
-   for the sedan and the bike.
+6. **Vehicles are undiscoverable (MEDIUM) — per-car, not blanket.** There are THREE cars
+   already, and they are not equally hidden. The station wagon (6.5, 250) sits ~15 m from
+   the Day-1 spawn (0, 264) — the player can hardly miss it, so it gets NO discovery toast
+   (it is the tutorial car). The sedan (6.5, -62) is the remote one. **Fix (per vehicle):**
+   once the player comes within 30 m of the sedan, the Jeep, or the bike, add a map POI
+   ("Car", "Jeep", "Bike") and a one-time toast ("A working car — E to drive" / "A working
+   Jeep — E to drive" / "A working bike — E to drive"). The wagon gets a map POI but no
+   toast. The Jeep is the FOURTH drivable — its reason to exist beyond "second" is that it
+   is the car Kes finds and drives in the chase (Appendix A).
 7. **Fall damage is softer than the bar (SMALL).** Bar: ~half health from a short building,
-   lethal ~12 m. Code: (A-2.5)*9 → 5 m = 22, 6 m = 31. **Fix:** rebalance to (A-3)*16
-   (0 at 3 m — the bar says none under 3 m; 5 m = 32, 6 m = 48 ≈ half health, 12 m = death
-   unchanged). Lethal threshold stays 12 m.
+   lethal ~12 m. Code: (A-2.5)*9 → 5 m = 22, 6 m = 31. **Fix (piecewise — a single linear
+   formula cannot hit the bar):** `damage = A<=3 ? 0 : A<=6 ? (A-3)*16 : 48+(A-6)*8.7`
+   (0 at 3 m — the bar says none under 3 m, and `fallDamage` only fires for falls >3 m;
+   5 m = 32, 6 m = 48 ≈ half health; 10 m = 83; 12 m = 100 = death). The earlier (A-3)*16
+   draft was WRONG: it reaches 100 at ~9.25 m, silently lowering the lethal threshold from
+   12 m. The piecewise curve keeps the effective lethal height at 12 m (the hard kill at
+   A≥12 still applies). Lethal threshold stays 12 m.
 8. **Fire damage is correct (no change).** 16/sec matches the bar exactly.
 9. **Fighting mobs has no reward (MEDIUM).** Mobs cost ammo/health and give nothing back.
-   **Fix:** 25% chance a dead mob drops a bandage (+10 health) or 3 rounds. The drop is a
-   small glowing pickup on the ground (reuse the supply-pickup visuals from item 1).
+   **Fix:** 25% chance PER KILL that a dead mob drops a bandage (+10 health) or +6 shells.
+   The drop is a NEW entity type, not attached to the corpse (dead mobs sink after 14 s and
+   are removed at `deadT>18` — a drop on the corpse would vanish with it). Lifetime: 60 s
+   or until the stage ends, whichever comes first. Pickup radius 2 m, its own
+   `nearestSupply` kind ("drop"), E-priority in the supply slot (below doors, §5). Drops
+   are cleared in `advanceStage()` (which clears only `ammoBoxes` and mobs today — drops
+   would otherwise persist across stages and accumulate). No map marker — you see the glow
+   on the ground. Reward note: +6 shells (not 3 — ammo comes in +18 boxes against a
+   60-round cap, so 3 is trivial) or a bandage (+10 health).
 10. **Animal encounters are ambient (verify-only).** Chickens/cows/dogs wander; feral ones
     attack. Verify the hen sound plays for the new Hen model (kind stays `"chicken"` → the
     hen/rooster MP3 is already wired). No new animal mechanics in this build.
@@ -468,19 +591,40 @@ reports; do not hand-roll an FBX parser.
 it does not exist yet; the builder writes and tests it in §9 step 1**):
 1. Import the source (FBX / .blend / OBJ). For `.blend` (Hen), open the file and export the
    `hen` object directly (the .blend is the author's working file — verify it contains the
-   same mesh as the FBX; prefer the FBX unless the .blend is cleaner).
-2. Apply transforms: FBX imports Z-up → convert to Y-up on export (Blender's glTF exporter
+   same mesh as the FBX; prefer the FBX unless the .blend is cleaner; verify the .blend's
+   textures are PACKED before choosing it — it may reference unpacked external textures).
+2. **Unit-scale normalization.** FBX sources are commonly centimetre-scale. Normalize to
+   metres in Blender (1 unit = 1 m) — only `cg()` normalizes scale in-game, and mob/human
+   models never pass through `cg()`, so nothing else normalizes them except the preview
+   eyeball. Verify the exported model's bounding box in metres before export.
+3. Apply transforms: FBX imports Z-up → convert to Y-up on export (Blender's glTF exporter
    handles this; VERIFY the exported model stands upright and faces +Z in the preview).
-3. Adapter renames per §3 (materials: `feather` / `hide` / `patch`; nodes: `legL`/`legR`/
-   `head`, `torso` proxies; gun `muzzle` Empty).
-4. Decimate to the poly budget (§7 budgets) with Blender's Decimate modifier (collapse,
-   preserve UVs). Check the silhouette still reads after decimation — never decimate blind.
-5. Textures: resize to max 1024 px (2048 for hero vehicles), convert to JPEG unless alpha
-   is needed, embed in the GLB.
-6. Export glTF 2.0 binary (.glb), +Y up, embed textures, keep baked animation clips with
-   clear names. Record: vertices, faces, texture count/size, animations, file size.
-7. Write a conversion report line to `work/conversions.md` (model, source file, poly
-   before/after, texture sizes, GLB size, adapter renames applied).
+   **Check for unapplied −90° armature rotation and unapplied transforms** — apply all
+   transforms before export (the real axis risks, not the importer's conversion).
+4. Adapter renames per §3 — **BONE renames, not Empty proxies** (materials: `feather` /
+   `hide` / `patch`; bones: `legL`/`legR`/`head`, `legFL/FR/BL/BR`,
+   `legL/legR/armL/armR/torso/head` for mobs; gun `muzzle` Empty — an Empty is fine as a
+   static anchor). Record the per-body bone→slot mapping table.
+5. Decimate to the poly AND vertex budgets (§7 budgets) with Blender's Decimate modifier
+   (collapse, preserve UVs). **For skinned/multi-object models: decimate PER OBJECT (the
+   Norton is 119 objects), with the Armature modifier AFTER the Decimate modifier in the
+   stack, and preserve vertex groups** — decimate-vs-Armature order is load-bearing. Check
+   the silhouette still reads after decimation — never decimate blind.
+6. Textures: resize to max 1024 px (2048 for hero vehicles) — **mechanism:** `Image.scale()`
+   in the script, re-save as JPEG unless alpha is needed, re-pack into the file before
+   export; the glTF exporter embeds the packed textures.
+7. **Interior faces (enterable buildings only):** set DoubleSide on the interior wall
+   materials (or build a separate interior shell) — downloaded exteriors are single-sided;
+   without this the inside is invisible. Verify from inside in the preview.
+8. **Animation pipeline:** keep baked animation clips with clear names (NLA/action step in
+   the script) — BUT the code has no AnimationMixer for mobs (mixers exist only for
+   birds/fire), so a baked mob walk clip is a NOTE, not the plan; the procedural walk
+   (§3b) is the default and no mixer is added unless the coordinator approves it.
+9. Export glTF 2.0 binary (.glb), +Y up, embed textures. Record: vertices, faces, texture
+   count/size, animations, file size.
+10. Write a conversion report line to `work/conversions.md` (model, source file, poly/verts
+    before/after, texture sizes, GLB size, adapter renames applied, peak RSS of the
+    conversion).
 
 **Size budgets (base64 inflates GLB by ~33% — the table shows BOTH columns; the 32 MB cap is
 on the FINAL `index.html` BYTES, not on GLB bytes):**
@@ -505,6 +649,17 @@ on the FINAL `index.html` BYTES, not on GLB bytes):**
 | **NET added to `index.html`** | | **≤ ~16.2 MB** | Current file 14.4 MB → target total **≤ ~30.6 MB**, hard cap **32 MB**. |
 | Fillers — ONLY if budget remains: NY skyline ≤ 1.0 MB GLB; L_build_1/2/3 + Concrete House 003 ≤ 0.5 MB GLB total | | ≤ 2.0 MB embedded | These ship ONLY if the running total (tracked in the swap log, §11) stays ≤ 32 MB after adding them. They are the first cut. |
 
+**Vertex budgets (Goldfish — a byte budget alone doesn't constrain geometry):** the Girl at
+48,092 verts is ~3 MB of geometry alone (position + normal + UV + skin indices/weights ≈
+64 bytes/vert) — she cannot fit a 0.9 MB GLB without decimating to roughly a third, which
+the v1 doc never stated. Budgets: each human ≤18k verts (Girl 48k → ~16k; the 71k version
+only AFTER a decimation test, not by eye — decide 48k vs 71k on the decimated result);
+Hen ≤3k; cow ≤8k; dog ≤6k; bird ≤3k; Honey Locust ≤10k; each grass species ≤2k per plant;
+each enterable building ≤30k; Norton ≤50k faces (already); Jeep ≤20k; Old Car ≤20k;
+Military Truck ≤25k; each weapon ≤2k. Zane's decimation target: ≤18k verts from the 109 MB
+source. Worker vertex count: state from the Blender inspection at §9 step 1 (2.6 MB FBX on
+disk).
+
 **Why the old table was wrong (Goldfish):** it summed to ~23.1 MB of GLB (≈30.8 MB base64)
 against an "18 MB" total that never said GLB or base64 — 14.4 + 30.8 ≈ 45 MB, over the cap
 by ~13 MB. The table above is the honest math. **Cut order if the running total approaches
@@ -517,7 +672,7 @@ drop him entirely, (4) one grass species. Never silently exceed 32 MB — report
 
 **Viewer:** build `preview/model-preview.html` on the character-preview pattern:
 single HTML file, **vendored** Three.js (the VM's headless Chrome cannot reach public CDNs —
-`preview/vendor/` already holds `three.module.js` + `OrbitControls.js`; ALSO vendor
+`preview/vendor/` already holds `three.module.js` + `controls/OrbitControls.js`; ALSO vendor
 `GLTFLoader.js` from three 0.160.0 examples into `preview/vendor/loaders/GLTFLoader.js` —
 the character-preview maps `"three/addons/"` → `"./vendor/"`, so the loader MUST land at
 `vendor/loaders/GLTFLoader.js` with importmap entry
@@ -543,14 +698,25 @@ difference first.
    hen ~0.5 m, cow ~1.5 m at shoulder, car ~4.5 m long, door ~2.1 m high).
 4. Orientation check: the model faces the game's forward axis (+Z) — verify by rotating it
    in the viewer and by the in-game screenshot.
-5. Adapter check: required node/material names exist (`legL`/`legR`/`head`, `feather`,
-   `hide`/`patch`, `torso`, `muzzle`) — verified by reading the GLB JSON, not by eye.
+5. Adapter check: required node/material names exist — for SKINNED models these are RENAMED
+   BONES (`legL`/`legR`/`head`, `legFL/FR/BL/BR`, `legL/legR/armL/armR/torso/head` for mobs
+   + the weapon socket), NOT Empty proxies (inert on skinned meshes); materials (`feather`,
+   `hide`/`patch`); the gun `muzzle` Empty (a static anchor — fine). Verified by reading
+   the GLB JSON, not by eye. For mobs: rotating each renamed bone in the viewer swings on
+   the expected axis.
 6. Animation check: any baked clip plays in the viewer (walk/run/flap/fire). Passes
    vacuously for models with no clips — a clipless model is judged by its still + the
    in-game screenshot (§9), and the bird must never ship frozen (see §3a).
-7. Budget check: GLB size + poly count within §7 budgets.
+7. Budget check: GLB size + poly count within §7 budgets (byte AND vertex budgets).
 8. The preview page for that model is committed + pushed (so the preview link exists) AND
    `curl` returns HTTP 200 for the preview URL — pushed ≠ exists, check it.
+9. **License gate:** source URL + license recorded in the README swap log BEFORE the commit
+   — a model can pass gates 1–8 and still not ship with an unclear or non-commercial
+   license (L_build and Concrete House especially).
+10. **Enterable buildings only — FURNISHED:** an unfurnished interior does not ship
+    ("furnish pass 2" means it does not ship in pass 1, not that it ships empty).
+11. **Door gate (enterable buildings only):** E at a door next to a car opens the door, not
+    the car (§5).
 
 **A model that fails any gate does NOT go into `index.html`.** Fix it (re-convert, re-decimate,
 rename) and re-preview. Never commit a model on the builder's word alone — the coordinator
@@ -563,12 +729,7 @@ checks the preview screenshots personally before the swap lands.
 Work in this order. One swap = one commit + push + live check. If a swap's verification
 fails, STOP that swap (do not stack more swaps on top of a broken build) and report.
 
-1. **Tooling:** tag the pre-build known-good commit FIRST (`git tag pre-integration-<date>`
-   — the rollback anchor; see the rollback rule below). Blender extracted + verified
-   (`blender --version`, one test conversion: Hen FBX → GLB). `work/convert.py` written.
-   Blender inspection of Worker / Girl / Zane / Hen animation status (all four — the
-   "unverified until Blender" rule, §3b). `preview/model-preview.html` built + published +
-   smoke-tested with the known-good chicken GLB (§8).
+1. **Tooling + spike tests:** tag the pre-build known-good commit FIRST (`git tag pre-integration-<date>` — the rollback anchor; see the rollback rule below). Blender extracted + verified (`blender --version`). **SPIKE-TEST THE LARGEST CONVERSIONS FIRST — Zane (109 MB FBX), then the Norton (404k faces, 119 objects) — before the Hen proves the pipeline.** Hen-first means the riskiest files are discovered late, after the pipeline is "proven" on the easiest file. Record peak RSS per model in `work/conversions.md`. **Abort rule:** if Zane cannot convert within RAM, drop Zane immediately per §10 item 2. The VM has ~7.9 GB total RAM and showed only ~344 MB available at the Goldfish check (other work running) — the builder checks free RAM and closes other work before starting Blender. `work/convert.py` written (step-1 deliverable). Blender inspection of Worker / Girl / Zane / Hen animation status (all four — the "unverified until Blender" rule, §3b) + Worker vertex count + Hen material→mesh mapping. **Flow interfaces defined BEFORE any placement work:** pickup kinds (POI restock, bandage kind, drop kind), HEALTH map category, discovery-toast rule (§6 items 1/6/9), surge trigger (§6 item 4), door E-slot (§5). `preview/model-preview.html` built + published + smoke-tested with the known-good chicken GLB (§8).
 2. **Hen → chicken (`q6`/`t.scene`).** Smallest, safest first swap. Proves the pipeline end-to-end.
 3. **Old Car 04 → wreck (`W6`/`c.scene`).** Simple static swap; also upgrades the stranger scene's backdrop.
 4. **Worker + Girl + Zane → mobs.** The biggest visual win. Includes the `torso` proxies
@@ -579,15 +740,20 @@ fails, STOP that swap (do not stack more swaps on top of a broken build) and rep
    first-person screenshots (weapon in hand, muzzle position).
 7. **Honey Locust → oak (`_6`/`r.scene`) + 4th tree variant; Maxtree grasses → instanced tufts.**
 8. **Enterable buildings:** medieval house → windmill → village homes, each with doorway,
-   colliders, shelter rect, door + knob + glow. Furnish pass per §4.
+   colliders, shelter rect, door + knob + glow. Furnish pass per §4. Placement verification
+   (top-down screenshot or collider dump, §4) BEFORE each building's swap commits. The
+   truck-bed bandage pickup (§6 item 1) and the door E-slot (§5) are built with the
+   buildings, not after them.
 9. **Vehicles:** Jeep (the car Kes finds and drives — primary drivable + chase vehicle) →
-   Norton (rideable) → Military Truck (roadblock + supply site). Each gets a map POI +
-   discovery toast (§6 item 6).
+   Norton (rideable) → Military Truck (roadblock + supply site). Vehicle POIs + discovery
+   toasts (§6 item 6) are built with the vehicles, not in step 11.
 10. **Fillers:** New York skyline, L_build_1/2/3, Concrete House 003 (only after
     origin/license confirmed).
-11. **Progression + flow items (§6):** supply pickups, compass arrow, Day 4 surge, mob
-    drops, fall rebalance, opening toast. (These are code edits in `index.html` — small,
-    testable one at a time.)
+11. **Progression + flow items (§6) — the REMAINING ones:** compass arrow, Day 4 surge, fall
+    rebalance, opening toast, fight-or-flight reset, engine sound. (Supply restock/bandages/
+    drops and vehicle POIs were built with steps 8–9 — the flow interfaces were defined in
+    step 1, before placement. These are code edits in `index.html` — small, testable one
+    at a time.)
 12. **Pending downloads (cow / dog / bird / buildings / weapons) slot into steps 2–8 above
     as they land, per the §2b dependency table** — a swap whose file hasn't landed is
     skipped with a clearly-marked README TODO; all other swaps proceed. Do not hold the
@@ -641,17 +807,19 @@ target device; if it doesn't, cut instance counts / texture resolution before sh
 
 | # | Risk / question | Mitigation / owner |
 |---|---|---|
-| 1 | **Worker / Girl / Zane may have NO baked walk/run animations.** The mob walk would then be fully procedural bone rotation, which can look stiff. | Verify in Blender FIRST (step 1 of the build). If no clips: procedural bone rotation (§3b) + the existing `gait()` pattern. If it looks stiff in preview, bake a simple walk cycle in Blender from the rig (rotate thighs/calves/arms on keyframes, 1 s loop) — doable, but budget the time. |
-| 2 | **Zane Ryder is 109 MB.** Decimation + texture resize may still leave it over budget, or lose the face detail. | Decimate in stages (50% → check → 25% → check). Textures to 1024 px, then 512 px if needed. If it still won't fit 0.9 MB, DROP HIM ENTIRELY and use Worker/Girl only — using him for fewer mobs saves nothing (the GLB is embedded once regardless of how many mobs use it). |
+| 1 | **Worker / Girl / Zane may have NO baked walk/run animations.** The mob walk would then be fully procedural bone rotation, which can look stiff. | Verify in Blender FIRST (step 1 of the build) — all animation claims are UNVERIFIED until then. The plan is procedural bone rotation on RENAMED bones (§3b); baked clips are NOT the plan (no AnimationMixer for mobs). If the procedural walk looks stiff in the frame-sequence capture, bake a simple walk cycle in Blender from the rig (rotate thighs/calves/arms on keyframes, 1 s loop) — doable, but budget the time. |
+| 2 | **Zane Ryder is 109 MB.** Decimation + texture resize may still leave it over budget, or lose the face detail. | Decimate in stages (50% → check → 25% → check). Textures to 1024 px, then 512 px if needed. Target ≤18k verts (see §7 vertex budgets). If it still won't fit 0.9 MB, DROP HIM ENTIRELY and use Worker/Girl only — using him for fewer mobs saves nothing (the GLB is embedded once regardless of how many mobs use it). |
 | 3 | **The Girl is "stylized" by name.** Kester picked her personally — her pick stands. But verify she reads as a realistic person next to the Worker, not a cartoon. | Preview screenshot side-by-side with the Worker. If she reads cartoonish, use her sparingly (fewer female mobs) and tell Kester plainly. |
-| 4 | **The Jeep may have no interior.** First-person driving needs one. | Verify on download. Fallback: chase cam for the Jeep only (document it as a known difference). |
+| 4 | **The Jeep may have no interior.** First-person driving needs one. | Verify on download. **Interior gate (§3b):** interior confirmed → first-person chase car; no interior → the Jeep is NOT drivable as a first-person vehicle — the fallback is a scoped chase-camera build (a new camera system, decided with Kester told plainly), NOT a silent "decide at build time". |
 | 5 | **The Norton is 404k faces.** Decimation could mangle the chain/spokes. | Decimate the body aggressively, keep wheels/chain at higher density, verify in preview. If the chain won't survive, hide the chain (it's a detail, not a load-bearing part). |
 | 6 | **Enterable interiors need furniture the downloads don't include.** | §4 furnishing plan: reuse village furniture if separable; else prop-library furnishing; flag "furnish pass 2" rather than blocking the build. |
 | 7 | **The medieval block may be an unusable Lumion scene; the archviz scene is 491 MB.** | Skip both for this build (already decided in §4). No build time spent on them. |
 | 8 | **L_build + Concrete House origins are unconfirmed.** | Do NOT ship either until the browser report confirms source URL + license. The other six landed models also have no recorded license yet — §9 item 0 blocks their commits until the browser report (or a page re-check) is filed. |
 | 9 | **Single-file size.** 14.4 MB → ~32 MB target. Kester plays on a phone (DeX). | §7 budgets + the 32 MB hard cap. If the cap breaks, cut textures first, then models. |
 | 10 | **The browser task hasn't finished.** Cow/dog/bird/buildings/weapons/vehicles may land late or not at all. | Build order (§9 step 12) lets ready swaps proceed; late files slot in. If a file never lands, the old model stays and the README says so — no silent gaps. |
-| 11 | **The `house` (`p6`/`g.scene`) and `cottage` (`H6`/`B.scene`) GLB placements are unmapped.** | Builder traces their usage before touching them (§3c). Do not swap blind. |
+| 11 | **The `house` (`p6`/`g.scene`) and `cottage` (`H6`/`B.scene`) GLB placements are unmapped.** | Builder traces their usage before touching them (§3c). The cottage GLB is the cottage wall/floor structure — it stays as-is in this build (see §4 known difference: cottages keep their position-zone shelter). Do not swap blind. |
+| 13 | **Supply POI inventory is unverified.** §6 item 1 cites 5 of 11 POI positions from the bundle; the remaining 6 come from the build-start inventory of `world.pois`. | If the inventory finds a different count or values, §6 item 1 is restated from the inventory, not from the doc's examples. |
+| 14 | **The Day 4 surge depends on the truck roadblock.** | If the truck swap (step 9) slips or the (0, -80) placement fails verification, the surge (§6 item 4) has no on-foot gate and must be re-scoped — it cannot ship as a drive-by. |
 | 12 | **The chase stage is PROPOSED, not approved.** | No code. The design notes the dependency (vehicles) and stops there. |
 
 ---
