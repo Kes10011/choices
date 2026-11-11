@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Choices — Character Preview</title>
+<style>
+  html, body { margin: 0; padding: 0; height: 100%; overflow: hidden; background: #dfe8f0;
+    font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+  #app { position: fixed; inset: 0; }
+  canvas { display: block; }
+
+  .panel {
+    position: absolute; left: 16px; top: 16px; z-index: 10;
+    background: rgba(10, 10, 15, 0.82); color: #f2f2f2;
+    border: 1px solid rgba(212, 175, 55, 0.55); border-radius: 12px;
+    padding: 14px 16px; max-width: 320px; backdrop-filter: blur(4px);
+  }
+  .panel h1 { margin: 0 0 2px 0; font-size: 19px; letter-spacing: 0.5px; color: #D4AF37; }
+  .panel p.sub { margin: 0 0 12px 0; font-size: 12.5px; color: #b9b9c4; line-height: 1.45; }
+  .row { display: flex; gap: 8px; margin-bottom: 8px; flex-wrap: wrap; }
+  .row .lbl { width: 100%; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #8f8fa0; }
+  button {
+    flex: 1; padding: 9px 10px; font-size: 14px; font-weight: 600;
+    color: #e8e8ee; background: #1c1c26; border: 1px solid #3a3a4a;
+    border-radius: 8px; cursor: pointer; transition: all .15s ease;
+  }
+  button:hover { border-color: #D4AF37; color: #fff; }
+  button.active { background: #D4AF37; border-color: #D4AF37; color: #14141a; }
+  button.wounded-active { background: #8a2f22; border-color: #c0452f; color: #fff; }
+  #state {
+    margin-top: 10px; padding: 8px 10px; border-radius: 8px;
+    background: rgba(212, 175, 55, 0.12); border: 1px solid rgba(212, 175, 55, 0.35);
+    font-size: 13.5px; color: #f5d97a; text-align: center;
+  }
+  #state.wounded { background: rgba(160, 50, 30, 0.18); border-color: rgba(200, 70, 45, 0.5); color: #ffb199; }
+  .hint { position: absolute; right: 16px; bottom: 14px; z-index: 10;
+    font-size: 12.5px; color: #5a6470; background: rgba(255,255,255,0.65);
+    padding: 6px 10px; border-radius: 8px; }
+  #err { position: absolute; left: 16px; bottom: 14px; z-index: 10; max-width: 60%;
+    font-size: 12.5px; color: #a33; background: rgba(255,235,235,0.9);
+    padding: 8px 10px; border-radius: 8px; display: none; }
+</style>
+<script type="importmap">
+{
+  "imports": {
+    "three": "./vendor/three.module.js",
+    "three/addons/": "./vendor/"
+  }
+}
+</script>
+</head>
+<body>
+<div id="app"></div>
+
+<div class="panel">
+  <h1>Choices — Character Preview</h1>
+  <p class="sub">Unnamed survivor, built entirely from smooth shapes — no boxes.
+     Preview only: nothing here is in the game yet.</p>
+  <div class="row">
+    <span class="lbl">Condition</span>
+    <button id="btnHealthy" class="active">Healthy</button>
+    <button id="btnWounded">Wounded</button>
+  </div>
+  <div class="row">
+    <span class="lbl">Movement</span>
+    <button id="btnIdle" class="active">Idle</button>
+    <button id="btnWalk">Walk</button>
+    <button id="btnRun">Run</button>
+  </div>
+  <div id="state">Healthy — idle</div>
+</div>
+<div class="hint">Drag to orbit &middot; Scroll to zoom</div>
+<div id="err"></div>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+const showErr = (m) => { const e = document.getElementById('err'); e.style.display = 'block'; e.textContent = m; };
+window.addEventListener('error', (e) => showErr('Error: ' + (e.message || e.error)));
+
+/* ============================================================
+   Renderer / scene / camera
+   ============================================================ */
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.05;
+document.getElementById('app').appendChild(renderer.domElement);
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0xdfe8f0);           // soft light grey-blue
+scene.fog = new THREE.Fog(0xdfe8f0, 18, 46);
+
+const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 120);
+camera.position.set(2.1, 1.55, 3.0);                    // 3/4 front view
+
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.target.set(0, 0.95, 0);
+controls.enableDamping = true;
+controls.dampingFactor = 0.08;
+controls.minDistance = 1.2;
+controls.maxDistance = 12;
+controls.maxPolarAngle = Math.PI * 0.52;                 // stay just above the ground
+
+/* ============================================================
+   Lights
+   ============================================================ */
+scene.add(new THREE.HemisphereLight(0xcfe4ff, 0x8a7a5e, 0.85));
+
+const sun = new THREE.DirectionalLight(0xfff2dd, 1.9);
+sun.position.set(4.5, 7, 3.5);
+sun.castShadow = true;
+sun.shadow.mapSize.set(2048, 2048);
+sun.shadow.camera.left = -6; sun.shadow.camera.right = 6;
+sun.shadow.camera.top = 6; sun.shadow.camera.bottom = -6;
+sun.shadow.camera.near = 1; sun.shadow.camera.far = 20;
+sun.shadow.bias = -0.0005;
+scene.add(sun);
+
+/* ============================================================
+   Ground — big disc, canvas grid texture that scrolls
+   ============================================================ */
+function makeGridTexture() {
+  const c = document.createElement('canvas');
+  c.width = c.height = 512;
+  const g = c.getContext('2d');
+  g.fillStyle = '#7d8471';                               // muted grey-green
+  g.fillRect(0, 0, 512, 512);
+  // faint mottling so the ground isn't flat
+  for (let i = 0; i < 900; i++) {
+    g.fillStyle = `rgba(${90 + Math.random() * 40 | 0},${95 + Math.random() * 40 | 0},${70 + Math.random() * 30 | 0},0.25)`;
+    g.fillRect(Math.random() * 512, Math.random() * 512, 3 + Math.random() * 8, 3 + Math.random() * 8);
+  }
+  // grid lines — one tile per 128px, i.e. 2 world units at repeat 30 over 60 units
+  g.strokeStyle = 'rgba(40, 48, 38, 0.35)';
+  g.lineWidth = 2;
+  for (let i = 0; i <= 4; i++) {
+    const p = i * 128;
+    g.beginPath(); g.moveTo(p, 0); g.lineTo(p, 512); g.stroke();
+    g.beginPath(); g.moveTo(0, p); g.lineTo(512, p); g.stroke();
+  }
+  const tex = new THREE.CanvasTexture(c);
+  tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+  tex.repeat.set(30, 30);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return tex;
+}
+const gridTex = makeGridTexture();
+const ground = new THREE.Mesh(
+  new THREE.CircleGeometry(30, 64),
+  new THREE.MeshStandardMaterial({ map: gridTex, roughness: 0.95, metalness: 0 })
+);
+ground.rotation.x = -Math.PI / 2;
+ground.receiveShadow = true;
+scene.add(ground);
+
+/* ============================================================
+   Scattered set dressing — smooth rocks + dead trees.
+   They scroll with the ground (treadmill) and wrap around.
+   ============================================================ */
+const scrollers = [];
+const rockMat = new THREE.MeshStandardMaterial({ color: 0x8b8d89, roughness: 0.9, flatShading: true });
+for (let i = 0; i < 9; i++) {
+  const r = new THREE.Mesh(new THREE.IcosahedronGeometry(0.25 + Math.random() * 0.45, 0), rockMat);
+  let rx, rz;
+  do { rx = (Math.random() - 0.5) * 16; rz = (Math.random() - 0.5) * 32; }
+  while (Math.hypot(rx, rz) < 3);   // keep the centre clear around the character
+  r.position.set(rx, 0.08, rz);
+  r.scale.y = 0.55 + Math.random() * 0.3;
+  r.rotation.y = Math.random() * Math.PI;
+  r.castShadow = r.receiveShadow = true;
+  scene.add(r); scrollers.push(r);
+}
+const trunkMat = new THREE.MeshStandardMaterial({ color: 0x4a382a, roughness: 0.95 });
+for (let i = 0; i < 2; i++) {
+  const tree = new THREE.Group();
+  const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.16, 2.6, 10), trunkMat);
+  trunk.position.y = 1.3; trunk.castShadow = true; tree.add(trunk);
+  const b1 = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.06, 1.1, 8), trunkMat);
+  b1.position.set(0.35, 2.2, 0); b1.rotation.z = -0.7; b1.castShadow = true; tree.add(b1);
+  const b2 = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.05, 0.9, 8), trunkMat);
+  b2.position.set(-0.3, 2.0, 0.1); b2.rotation.z = 0.8; b2.castShadow = true; tree.add(b2);
+  tree.position.set(i === 0 ? -9 : 8.5, 0, i === 0 ? -2 : -4);   // off to the sides, not behind the character
+  scene.add(tree); scrollers.push(tree);
+}
+
+/* ============================================================
+   THE CHARACTER — male survivor, ~1.80 units tall.
+   Built ENTIRELY from smooth primitives (capsules / spheres /
+   cylinders). No boxes anywhere.
+   Facing +Z (toward the starting camera).
+   ============================================================ */
+const MAT = {
+  skin:   new THREE.MeshStandardMaterial({ color: 0x8a5a3b, roughness: 0.65 }), // warm brown
+  shirt:  new THREE.MeshStandardMaterial({ color: 0x6b6f4e, roughness: 0.8 }),  // dusty olive
+  pants:  new THREE.MeshStandardMaterial({ color: 0x2e2e33, roughness: 0.85 }), // dark charcoal
+  boot:   new THREE.MeshStandardMaterial({ color: 0x4a3220, roughness: 0.7 }),  // dark brown
+  hair:   new THREE.MeshStandardMaterial({ color: 0x1a1512, roughness: 0.9 }),
+  eye:    new THREE.MeshStandardMaterial({ color: 0x14100c, roughness: 0.4 }),
+  belt:   new THREE.MeshStandardMaterial({ color: 0x2a1d12, roughness: 0.7 }),
+  bandage:new THREE.MeshStandardMaterial({ color: 0xcfc0a0, roughness: 0.95 }), // aged cream, not bright white
+  bandageDark: new THREE.MeshStandardMaterial({ color: 0xbfae8a, roughness: 0.95 }), // darker cream for wrap rings
+  blood:  new THREE.MeshStandardMaterial({ color: 0x4a2015, roughness: 0.9 }),  // dried blood
+};
+
+function mesh(geo, mat, x = 0, y = 0, z = 0) {
+  const m = new THREE.Mesh(geo, mat);
+  m.position.set(x, y, z);
+  m.castShadow = true;
+  return m;
+}
+
+const char = new THREE.Group();          // root, feet at y = 0
+scene.add(char);
+
+/* ---- hips group: everything hangs off this (bob lives here) ---- */
+const hips = new THREE.Group();
+hips.position.y = 0.95;                  // hip joint height
+char.add(hips);
+
+// pelvis — flattened sphere, slightly wider than the waist (taper: waist < hips)
+const pelvis = mesh(new THREE.SphereGeometry(0.155, 24, 16), MAT.pants);
+pelvis.scale.set(1.08, 0.72, 0.85);
+pelvis.position.y = 0.03;
+hips.add(pelvis);
+
+// belt — thin torus at the waist
+const belt = mesh(new THREE.TorusGeometry(0.145, 0.016, 10, 32), MAT.belt);
+belt.rotation.x = Math.PI / 2;
+belt.position.y = 0.10;
+hips.add(belt);
+
+/* ---- torso group (lean / twist live here) ---- */
+const torso = new THREE.Group();
+torso.position.y = 0.06;
+hips.add(torso);
+
+// torso — vertical capsule, narrowed ~20% vs before; chest slightly wider
+// than the waist, waist slightly narrower than the hips (no more barrel)
+const torsoMesh = mesh(new THREE.CapsuleGeometry(0.13, 0.30, 6, 20), MAT.shirt);
+torsoMesh.scale.set(1.0, 1, 0.88);
+torsoMesh.position.y = 0.28;
+torso.add(torsoMesh);
+
+// chest / shoulders — ellipsoid for a natural shoulder line, only slightly
+// wider than the waist capsule
+const chest = mesh(new THREE.SphereGeometry(0.13, 24, 16), MAT.shirt);
+chest.scale.set(1.15, 0.72, 0.9);
+chest.position.y = 0.44;
+torso.add(chest);
+
+// neck — short cylinder
+const neck = mesh(new THREE.CylinderGeometry(0.05, 0.055, 0.09, 16), MAT.skin);
+neck.position.y = 0.58;
+torso.add(neck);
+
+/* ---- head group (look-around / tilt live here) ---- */
+const headG = new THREE.Group();
+headG.position.y = 0.70;                 // head centre ~1.68 absolute
+torso.add(headG);
+
+const head = mesh(new THREE.SphereGeometry(0.104, 28, 20), MAT.skin);
+head.scale.set(0.95, 1.08, 0.95);   // slightly elongated, not a perfect ball
+headG.add(head);
+
+// hair — a cap over the top + back, tilted back so the front edge sits at a
+// hairline across the forehead (not a dome pulled down to the eyebrows)
+const hair = mesh(new THREE.SphereGeometry(0.11, 24, 16, 0, Math.PI * 2, 0, Math.PI * 0.45), MAT.hair);
+hair.position.set(0, 0.008, -0.016);
+hair.rotation.x = -0.55;
+hair.scale.set(1, 0.95, 1.02);
+headG.add(hair);
+
+// eyes — two small dark spheres on the face (+Z side)
+headG.add(mesh(new THREE.SphereGeometry(0.013, 10, 8), MAT.eye, -0.037, 0.012, 0.092));
+headG.add(mesh(new THREE.SphereGeometry(0.013, 10, 8), MAT.eye,  0.037, 0.012, 0.092));
+// nose — small bump
+const nose = mesh(new THREE.SphereGeometry(0.017, 10, 8), MAT.skin, 0, -0.018, 0.095);
+nose.scale.set(0.8, 1.3, 0.9);
+headG.add(nose);
+
+/* ---- arms: shoulder group -> upper arm -> elbow group -> forearm -> hand ---- */
+function buildArm(side) {                // side: -1 left, +1 right
+  const shoulder = new THREE.Group();
+  shoulder.position.set(0.155 * side, 0.47, 0);   // tucked in at the torso side
+  torso.add(shoulder);
+
+  // shoulder joint ball, flattened sideways so it doesn't poke out past the torso
+  const shoulderBall = mesh(new THREE.SphereGeometry(0.058, 16, 12), MAT.shirt);
+  shoulderBall.scale.set(0.7, 1, 1);
+  shoulder.add(shoulderBall);
+
+  // upper arm — full short sleeve in the shirt colour, down to just above the elbow
+  const upper = mesh(new THREE.CapsuleGeometry(0.058, 0.20, 4, 14), MAT.shirt);
+  upper.position.y = -0.14;
+  shoulder.add(upper);
+
+  const elbow = new THREE.Group();
+  elbow.position.y = -0.30;
+  shoulder.add(elbow);
+  elbow.add(mesh(new THREE.SphereGeometry(0.055, 14, 10), MAT.skin));      // elbow ball
+
+  // forearm (skin) — thickened ~30%, no more thin brown stick
+  const fore = mesh(new THREE.CapsuleGeometry(0.060, 0.16, 4, 14), MAT.skin);
+  fore.position.y = -0.14;
+  elbow.add(fore);
+
+  // hand — sphere at the wrist, slightly bigger
+  elbow.add(mesh(new THREE.SphereGeometry(0.062, 14, 10), MAT.skin, 0, -0.30, 0));
+  return { shoulder, elbow };
+}
+const armR = buildArm(-1);   // character's right is -X when facing +Z
+const armL = buildArm(1);
+
+/* ---- legs: hip group -> thigh -> knee group -> shin -> boot ---- */
+function buildLeg(side) {                // side: -1 left, +1 right
+  const hip = new THREE.Group();
+  hip.position.set(0.11 * side, 0, 0);   // hip joint
+  hips.add(hip);
+
+  hip.add(mesh(new THREE.SphereGeometry(0.095, 16, 12), MAT.pants));       // hip joint ball
+
+  // thigh — capsule pivoting from the hip, thickened ~15%
+  const thigh = mesh(new THREE.CapsuleGeometry(0.098, 0.28, 4, 16), MAT.pants);
+  thigh.position.y = -0.225;
+  hip.add(thigh);
+
+  const knee = new THREE.Group();
+  knee.position.y = -0.45;
+  hip.add(knee);
+  knee.add(mesh(new THREE.SphereGeometry(0.072, 14, 10), MAT.pants));      // knee ball
+
+  // shin — capsule pivoting from the knee
+  const shin = mesh(new THREE.CapsuleGeometry(0.072, 0.26, 4, 16), MAT.pants);
+  shin.position.y = -0.20;
+  knee.add(shin);
+
+  // boot — bigger and elongated forward, a foot shape, not a small ball
+  const boot = mesh(new THREE.SphereGeometry(0.095, 16, 12), MAT.boot, 0, -0.40, 0.05);
+  boot.scale.set(1.05, 0.6, 2.0);
+  knee.add(boot);
+
+  return { hip, knee, thigh, shin };
+}
+const legR = buildLeg(-1);   // character's right is -X when facing +Z
+const legL = buildLeg(1);
+
+/* ---- wounded extras (hidden until Wounded is active) ---- */
+// bandage wrapped around the RIGHT thigh — a NARROW wrap: a short base
+// cylinder in aged cream plus four slightly tilted wrap rings so it reads
+// as a spiral-wrapped bandage, not a wide bright band
+const bandage = new THREE.Group();
+const bandBase = mesh(new THREE.CylinderGeometry(0.103, 0.103, 0.13, 20), MAT.bandage);
+bandBase.position.y = -0.22;
+bandage.add(bandBase);
+const ringYs = [-0.175, -0.205, -0.235, -0.265];
+const ringTilts = [0.05, -0.05, 0.04, -0.04];
+for (let i = 0; i < ringYs.length; i++) {
+  const ring = mesh(new THREE.TorusGeometry(0.104, 0.011, 8, 24), MAT.bandageDark, 0, ringYs[i], 0.002 * (i % 2));
+  ring.rotation.x = Math.PI / 2 + ringTilts[i];
+  bandage.add(ring);
+}
+bandage.add(mesh(new THREE.SphereGeometry(0.02, 10, 8), MAT.bandageDark, 0.08, -0.19, 0.06)); // knot
+legR.hip.add(bandage);
+
+// dried blood: a streak down the RIGHT shin + a patch under the bandage edge
+const bloodStreak = mesh(new THREE.SphereGeometry(0.055, 12, 10), MAT.blood, 0, -0.18, 0.062);
+bloodStreak.scale.set(1, 2.6, 0.28);     // flattened against the shin, running down it
+legR.knee.add(bloodStreak);
+const bloodPatch = mesh(new THREE.SphereGeometry(0.05, 12, 10), MAT.blood, 0, -0.31, 0.075);
+bloodPatch.scale.set(1.1, 0.9, 0.3);
+legR.hip.add(bloodPatch);
+
+bandage.visible = bloodStreak.visible = bloodPatch.visible = false;
+
+/* ============================================================
+   State + UI
+   ============================================================ */
+const params = new URLSearchParams(location.search);
+let wounded = params.get('wounded') === '1';
+let mode = params.get('anim') || 'idle';          // idle | walk | run
+if (!['idle', 'walk', 'run'].includes(mode)) mode = 'idle';
+
+const stateEl = document.getElementById('state');
+const btnHealthy = document.getElementById('btnHealthy');
+const btnWounded = document.getElementById('btnWounded');
+const btnIdle = document.getElementById('btnIdle');
+const btnWalk = document.getElementById('btnWalk');
+const btnRun = document.getElementById('btnRun');
+
+function gaitName() {
+  if (mode === 'idle') return 'idle';
+  if (mode === 'walk') return wounded ? 'limping' : 'walking';
+  return wounded ? 'hobbling' : 'running';
+}
+function refreshUI() {
+  btnHealthy.classList.toggle('active', !wounded);
+  btnWounded.classList.toggle('active', wounded);
+  btnWounded.classList.toggle('wounded-active', wounded);
+  btnIdle.classList.toggle('active', mode === 'idle');
+  btnWalk.classList.toggle('active', mode === 'walk');
+  btnRun.classList.toggle('active', mode === 'run');
+  stateEl.textContent = (wounded ? 'Wounded' : 'Healthy') + ' — ' + gaitName();
+  stateEl.classList.toggle('wounded', wounded);
+  bandage.visible = bloodStreak.visible = bloodPatch.visible = wounded;
+}
+btnHealthy.onclick = () => { wounded = false; refreshUI(); };
+btnWounded.onclick = () => { wounded = true; refreshUI(); };
+btnIdle.onclick = () => { mode = 'idle'; refreshUI(); };
+btnWalk.onclick = () => { mode = 'walk'; refreshUI(); };
+btnRun.onclick = () => { mode = 'run'; refreshUI(); };
+refreshUI();
+
+/* ============================================================
+   ANIMATION — all procedural.
+   Conventions: rotation.x > 0 swings a limb BACKWARD (-Z),
+   rotation.x < 0 swings it FORWARD (+Z). Character faces +Z.
+   phase advances with the gait; ground scroll matches travel speed.
+   ============================================================ */
+let phase = 0;
+const clock = new THREE.Clock();
+
+function setLimbPose() { /* reset helpers are inline below */ }
+
+function animate() {
+  requestAnimationFrame(animate);
+  const dt = Math.min(clock.getDelta(), 0.05);
+  const t = clock.elapsedTime;
+
+  // --- travel speed + cycle frequency per gait ---
+  let speed = 0, freq = 0;
+  if (mode === 'walk') { speed = wounded ? 0.9 : 1.4; freq = wounded ? 4.2 : 5.6; }
+  if (mode === 'run')  { speed = wounded ? 1.6 : 3.5; freq = wounded ? 5.0 : 9.0; }
+  phase += freq * dt;
+
+  // --- ground + scenery scroll (treadmill): world moves -Z as he travels +Z ---
+  if (speed > 0) {
+    gridTex.offset.y -= (speed * dt) / 60;        // offset 1.0 = full 60-unit plane
+    for (const o of scrollers) {
+      o.position.z -= speed * dt;
+      if (o.position.z < -16) o.position.z += 32;
+    }
+  }
+
+  // --- base pose reset each frame ---
+  torso.rotation.set(0, 0, 0);
+  torso.scale.set(1, 1, 1);
+  headG.rotation.set(0, 0, 0);
+  hips.position.y = 0.95;
+  // arms hang with a slight outward cant so the tucked-in shoulders clear the hips
+  armL.shoulder.rotation.set(0, 0, 0.10); armL.elbow.rotation.set(0, 0, 0);
+  armR.shoulder.rotation.set(0, 0, -0.10); armR.elbow.rotation.set(0, 0, 0);
+  legL.hip.rotation.set(0, 0, 0); legL.knee.rotation.set(0, 0, 0);
+  legR.hip.rotation.set(0, 0, 0); legR.knee.rotation.set(0, 0, 0);
+
+  if (mode === 'idle') {
+    // gentle breathing + slow look-around
+    const breath = Math.sin(t * 1.6);
+    torso.scale.y = 1 + breath * 0.012;
+    armL.shoulder.rotation.x = breath * 0.04;
+    armR.shoulder.rotation.x = -breath * 0.04;
+    armL.elbow.rotation.x = -0.12;
+    armR.elbow.rotation.x = -0.12;
+    headG.rotation.y = Math.sin(t * 0.45) * 0.35;
+    headG.rotation.x = Math.sin(t * 0.3) * 0.03;
+    if (wounded) {
+      torso.rotation.z = -0.07;                   // lean to the good (left) side
+      headG.rotation.x = 0.16;                    // head bowed slightly
+      armR.shoulder.rotation.x = -0.5;            // right arm held across, clutching thigh
+      armR.shoulder.rotation.z = 0.30;
+      armR.elbow.rotation.x = -1.0;
+    }
+  } else if (mode === 'walk' && wounded) {
+    // ---- LIMP: asymmetric, uneven rhythm ----
+    // uneven phase: the good step is quick, the hurt step drags
+    const lp = phase + 0.4 * Math.sin(phase);
+    const s = Math.sin(lp), c = Math.cos(lp);
+    // good (left) leg: full step
+    legL.hip.rotation.x = s * 0.55;
+    legL.knee.rotation.x = Math.max(0, -c) * 0.8;
+    // hurt (right) leg: barely lifts, drags behind
+    legR.hip.rotation.x = s * 0.12 - 0.05;
+    legR.knee.rotation.x = Math.max(0, -c) * 0.12;
+    // torso tilts to the good side, slight forward hunch
+    torso.rotation.z = -0.08;
+    torso.rotation.x = 0.10;
+    torso.rotation.y = s * 0.04;
+    // left arm swings a little; right arm stays clutched to the thigh
+    armL.shoulder.rotation.x = -s * 0.25;
+    armL.elbow.rotation.x = -0.25;
+    armR.shoulder.rotation.x = -0.5;
+    armR.shoulder.rotation.z = 0.30;
+    armR.elbow.rotation.x = -1.0;
+    // uneven bob
+    hips.position.y = 0.95 + Math.abs(c) * 0.02;
+    headG.rotation.x = 0.10;
+  } else if (mode === 'walk') {
+    // ---- HEALTHY WALK ----
+    const s = Math.sin(phase), c = Math.cos(phase);
+    legL.hip.rotation.x = s * 0.55;
+    legR.hip.rotation.x = -s * 0.55;
+    // knee bends most while the leg swings forward (peak at phase = PI)
+    legL.knee.rotation.x = Math.max(0, -c) * 0.9;
+    legR.knee.rotation.x = Math.max(0, c) * 0.9;
+    // arms counter-swing the legs
+    armL.shoulder.rotation.x = -s * 0.45;
+    armR.shoulder.rotation.x = s * 0.45;
+    armL.elbow.rotation.x = -0.2;
+    armR.elbow.rotation.x = -0.2;
+    // bob twice per cycle + slight lean + gentle torso twist
+    hips.position.y = 0.95 + Math.abs(c) * 0.03;
+    torso.rotation.x = 0.07;
+    torso.rotation.y = s * 0.08;
+    headG.rotation.y = -s * 0.05;
+  } else if (mode === 'run') {
+    // ---- RUN (healthy) / HOBBLE (wounded) ----
+    const s = Math.sin(phase), c = Math.cos(phase);
+    if (wounded) {
+      // faster limp: same asymmetric pattern, harder effort
+      const lp = phase + 0.4 * Math.sin(phase);
+      const sl = Math.sin(lp), cl = Math.cos(lp);
+      legL.hip.rotation.x = sl * 0.6;
+      legL.knee.rotation.x = Math.max(0, -cl) * 0.9;
+      legR.hip.rotation.x = sl * 0.14 - 0.05;
+      legR.knee.rotation.x = Math.max(0, -cl) * 0.15;
+      torso.rotation.z = -0.09;
+      torso.rotation.x = 0.16;
+      armL.shoulder.rotation.x = -sl * 0.35;
+      armL.elbow.rotation.x = -0.6;
+      armR.shoulder.rotation.x = -0.5;
+      armR.shoulder.rotation.z = 0.30;
+      armR.elbow.rotation.x = -1.0;
+      hips.position.y = 0.95 + Math.abs(cl) * 0.03;
+      headG.rotation.x = 0.08;
+    } else {
+      legL.hip.rotation.x = s * 0.8;
+      legR.hip.rotation.x = -s * 0.8;
+      legL.knee.rotation.x = Math.max(0, -c) * 1.15;
+      legR.knee.rotation.x = Math.max(0, c) * 1.15;
+      // arms pump with bent elbows
+      armL.shoulder.rotation.x = -s * 0.55;
+      armR.shoulder.rotation.x = s * 0.55;
+      armL.elbow.rotation.x = -0.9;
+      armR.elbow.rotation.x = -0.9;
+      hips.position.y = 0.95 + Math.abs(c) * 0.055;
+      torso.rotation.x = 0.18;
+      torso.rotation.y = s * 0.1;
+      headG.rotation.y = -s * 0.06;
+    }
+  }
+
+  controls.update();
+  renderer.render(scene, camera);
+}
+animate();
+
+window.addEventListener('resize', () => {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+});
+</script>
+</body>
+</html>
