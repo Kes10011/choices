@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Choices — Model Preview</title>
+<style>
+  html, body { margin: 0; padding: 0; height: 100%; overflow: hidden; background: #dfe8f0;
+    font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+  #app { position: fixed; inset: 0; }
+  canvas { display: block; }
+  .panel {
+    position: absolute; left: 16px; top: 16px; z-index: 10;
+    background: rgba(10, 10, 15, 0.82); color: #f2f2f2;
+    border: 1px solid rgba(212, 175, 55, 0.55); border-radius: 12px;
+    padding: 14px 16px; max-width: 340px; backdrop-filter: blur(4px);
+  }
+  .panel h1 { margin: 0 0 2px 0; font-size: 19px; letter-spacing: 0.5px; color: #D4AF37; }
+  .panel p.sub { margin: 0 0 12px 0; font-size: 12.5px; color: #b9b9c4; line-height: 1.45; }
+  .row { display: flex; gap: 8px; margin-bottom: 8px; flex-wrap: wrap; }
+  .row .lbl { width: 100%; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #8f8fa0; }
+  button {
+    flex: 1; padding: 9px 10px; font-size: 14px; font-weight: 600;
+    color: #e8e8ee; background: #1c1c26; border: 1px solid #3a3a4a;
+    border-radius: 8px; cursor: pointer; transition: all .15s ease;
+  }
+  button:hover { border-color: #D4AF37; color: #fff; }
+  button.active { background: #D4AF37; border-color: #D4AF37; color: #14141a; }
+  button:disabled { opacity: 0.35; cursor: default; }
+  #info { margin-top: 10px; padding: 8px 10px; border-radius: 8px;
+    background: rgba(212, 175, 55, 0.12); border: 1px solid rgba(212, 175, 55, 0.35);
+    font-size: 12.5px; color: #f5d97a; line-height: 1.5; word-break: break-word; }
+  #info .ok { color: #8fe08f; } #info .missing { color: #ff9a8a; }
+  .hint { position: absolute; right: 16px; bottom: 14px; z-index: 10;
+    font-size: 12.5px; color: #5a6470; background: rgba(255,255,255,0.65);
+    padding: 6px 10px; border-radius: 8px; }
+  #err { position: absolute; left: 16px; bottom: 14px; z-index: 10; max-width: 60%;
+    font-size: 12.5px; color: #a33; background: rgba(255,235,235,0.9);
+    padding: 8px 10px; border-radius: 8px; display: none; }
+</style>
+<script type="importmap">
+{
+  "imports": {
+    "three": "./vendor/three.module.js",
+    "three/addons/": "./vendor/"
+  }
+}
+</script>
+</head>
+<body>
+<div id="app"></div>
+<div class="panel">
+  <h1>Choices — Model Preview</h1>
+  <p class="sub" id="subtitle">Loading…</p>
+  <div class="row" id="animRow" style="display:none">
+    <span class="lbl">Animation</span>
+    <button id="btnAnimNone" class="active">None</button>
+  </div>
+  <div class="row" id="boneRow" style="display:none">
+    <span class="lbl">Bone test — tap to swing ±0.5 rad (mob slots)</span>
+  </div>
+  <div id="info">Loading model…</div>
+</div>
+<div class="hint">Drag to orbit &middot; Scroll to zoom &middot; 1 m grid, 1.8 m silhouette</div>
+<div id="err"></div>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+
+const showErr = (m) => { const e = document.getElementById('err'); e.style.display = 'block'; e.textContent = m; };
+window.addEventListener('error', (e) => showErr('Error: ' + (e.message || e.error)));
+
+const params = new URLSearchParams(location.search);
+const modelFile = params.get('model') || 'chicken-q6.glb';
+document.getElementById('subtitle').textContent = 'Model: ' + modelFile + ' — preview only, nothing here is in the game yet.';
+
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.05;
+document.getElementById('app').appendChild(renderer.domElement);
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0xdfe8f0);
+scene.fog = new THREE.Fog(0xdfe8f0, 18, 46);
+
+const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 120);
+camera.position.set(2.1, 1.55, 3.0);
+
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.target.set(0, 0.95, 0);
+controls.enableDamping = true;
+controls.dampingFactor = 0.08;
+controls.minDistance = 0.5;
+controls.maxDistance = 20;
+controls.maxPolarAngle = Math.PI * 0.52;
+
+scene.add(new THREE.HemisphereLight(0xcfe4ff, 0x8a7a5e, 0.85));
+const sun = new THREE.DirectionalLight(0xfff2dd, 1.9);
+sun.position.set(4.5, 7, 3.5);
+sun.castShadow = true;
+sun.shadow.mapSize.set(2048, 2048);
+sun.shadow.camera.left = -6; sun.shadow.camera.right = 6;
+sun.shadow.camera.top = 6; sun.shadow.camera.bottom = -6;
+sun.shadow.camera.near = 1; sun.shadow.camera.far = 20;
+sun.shadow.bias = -0.0005;
+scene.add(sun);
+
+// 1 m grid ground
+const grid = new THREE.GridHelper(20, 20, 0x556655, 0x889988);
+grid.material.transparent = true; grid.material.opacity = 0.6;
+scene.add(grid);
+const ground = new THREE.Mesh(
+  new THREE.CircleGeometry(30, 64),
+  new THREE.MeshStandardMaterial({ color: 0x7d8471, roughness: 0.95 })
+);
+ground.rotation.x = -Math.PI / 2; ground.position.y = -0.01; ground.receiveShadow = true;
+scene.add(ground);
+
+// 1.8 m human silhouette for scale (thin dark plane + head circle).
+// Positioned AFTER the model loads, beside the model, in loadModel().
+const silMat = new THREE.MeshBasicMaterial({ color: 0x222226, transparent: true, opacity: 0.32, side: THREE.DoubleSide });
+const silhouette = new THREE.Group();
+const silBody = new THREE.Mesh(new THREE.PlaneGeometry(0.5, 1.55), silMat);
+silBody.position.set(0, 0.775, 0); silhouette.add(silBody);
+const silHead = new THREE.Mesh(new THREE.CircleGeometry(0.13, 24), silMat);
+silHead.position.set(0, 1.68, 0); silhouette.add(silHead);
+const silLabel = (() => {
+  const c = document.createElement('canvas'); c.width = 256; c.height = 64;
+  const g = c.getContext('2d'); g.fillStyle = '#222'; g.font = 'bold 28px sans-serif';
+  g.fillText('1.8 m', 8, 44);
+  const t = new THREE.CanvasTexture(c);
+  const m = new THREE.Mesh(new THREE.PlaneGeometry(0.6, 0.15),
+    new THREE.MeshBasicMaterial({ map: t, transparent: true, side: THREE.DoubleSide }));
+  m.position.set(0, 1.95, 0); return m;
+})();
+silhouette.add(silLabel);
+scene.add(silhouette);
+
+// ---- model load ----
+const infoEl = document.getElementById('info');
+let mixer = null, clips = [], modelRoot = null;
+const boneState = {};   // name -> rotated?
+const MOB_SLOTS = ['legL', 'legR', 'armL', 'armR', 'torso', 'head'];
+
+new GLTFLoader().load('./models/' + modelFile, (gltf) => {
+  modelRoot = gltf.scene;
+  scene.add(modelRoot);
+  modelRoot.traverse((o) => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
+
+  // frame the model: centre on origin, camera at ~2x its size.
+  // NOTE: Box3.setFromObject is unreliable for SkinnedMesh (three r160
+  // applies bone matrices and double-counts node scales) — measure from
+  // each mesh's geometry bounds transformed by its own matrixWorld instead
+  // (bind pose, which is what we need for scale/orientation checks).
+  const box = new THREE.Box3();
+  const tmpV = new THREE.Vector3();
+  modelRoot.updateMatrixWorld(true);
+  modelRoot.traverse((o) => {
+    if (!o.isMesh || !o.geometry || !o.geometry.attributes.position) return;
+    // Raw POSITION bounds (NOT geometry.boundingBox — SkinnedMesh overrides
+    // computeBoundingBox with skinned bounds, which double-counts node
+    // scales and lies). Transform each raw corner by the mesh's world matrix.
+    const pos = o.geometry.attributes.position;
+    const min = new THREE.Vector3(Infinity, Infinity, Infinity);
+    const max = new THREE.Vector3(-Infinity, -Infinity, -Infinity);
+    for (let i = 0; i < pos.count; i++) {
+      min.x = Math.min(min.x, pos.getX(i)); min.y = Math.min(min.y, pos.getY(i)); min.z = Math.min(min.z, pos.getZ(i));
+      max.x = Math.max(max.x, pos.getX(i)); max.y = Math.max(max.y, pos.getY(i)); max.z = Math.max(max.z, pos.getZ(i));
+    }
+    for (let i = 0; i < 8; i++) {
+      tmpV.set(i & 1 ? max.x : min.x, i & 2 ? max.y : min.y, i & 4 ? max.z : min.z);
+      tmpV.applyMatrix4(o.matrixWorld);
+      box.expandByPoint(tmpV);
+    }
+  });
+  const size = new THREE.Vector3(); box.getSize(size);
+  const center = new THREE.Vector3(); box.getCenter(center);
+  modelRoot.position.sub(center); modelRoot.position.y += size.y / 2;
+  const maxDim = Math.max(size.x, size.y, size.z);
+  camera.position.set(maxDim * 0.6, size.y * 0.8 + 0.4, maxDim * 1.8);
+  controls.target.set(0, size.y / 2, 0);
+  // silhouette stands beside the model, clear of the camera
+  silhouette.position.set(size.x / 2 + 0.8, 0, -0.2);
+
+  // collect names
+  const nodeNames = [], matNames = new Set();
+  modelRoot.traverse((o) => {
+    if (o.name) nodeNames.push(o.name);
+    if (o.isMesh && o.material) {
+      (Array.isArray(o.material) ? o.material : [o.material]).forEach(m => matNames.add(m.name));
+    }
+  });
+  clips = gltf.animations || [];
+  if (clips.length) {
+    mixer = new THREE.AnimationMixer(modelRoot);
+    const row = document.getElementById('animRow');
+    row.style.display = 'flex';
+    clips.forEach((c, i) => {
+      const b = document.createElement('button');
+      b.textContent = c.name || ('clip ' + (i + 1));
+      b.onclick = () => {
+        mixer.stopAllAction();
+        mixer.clipAction(c).play();
+        row.querySelectorAll('button').forEach(x => x.classList.remove('active'));
+        b.classList.add('active');
+      };
+      row.appendChild(b);
+    });
+    document.getElementById('btnAnimNone').onclick = () => {
+      mixer.stopAllAction();
+      row.querySelectorAll('button').forEach(x => x.classList.remove('active'));
+      document.getElementById('btnAnimNone').classList.add('active');
+    };
+  }
+  // bone-test buttons for the mob slots that exist in this model
+  const foundSlots = MOB_SLOTS.filter(s => nodeNames.includes(s));
+  if (foundSlots.length) {
+    const row = document.getElementById('boneRow');
+    row.style.display = 'flex';
+    foundSlots.forEach((s) => {
+      const b = document.createElement('button');
+      b.textContent = s;
+      b.onclick = () => {
+        const node = modelRoot.getObjectByName(s);
+        if (!node) return;
+        boneState[s] = !boneState[s];
+        node.rotation.x += boneState[s] ? 0.5 : -0.5;
+        b.classList.toggle('active', boneState[s]);
+      };
+      row.appendChild(b);
+    });
+  }
+  const slotHtml = MOB_SLOTS.map(s =>
+    `<span class="${nodeNames.includes(s) ? 'ok' : 'missing'}">${nodeNames.includes(s) ? '✓' : '✗'} ${s}</span>`).join(' ');
+  infoEl.innerHTML =
+    `Size: ${size.x.toFixed(2)} × ${size.y.toFixed(2)} × ${size.z.toFixed(2)} m<br>` +
+    `Nodes: ${nodeNames.length} &middot; Materials: ${[...matNames].join(', ') || 'none'}<br>` +
+    `Animations: ${clips.length ? clips.map(c => c.name).join(', ') : 'none'}<br>` +
+    `Mob slots: ${slotHtml}`;
+  window.__MODEL_LOADED__ = true;
+}, undefined, (err) => {
+  showErr('Failed to load ./models/' + modelFile + ': ' + (err.message || err));
+  infoEl.textContent = 'LOAD FAILED — see error below.';
+});
+
+const clock = new THREE.Clock();
+function animate() {
+  requestAnimationFrame(animate);
+  const dt = Math.min(clock.getDelta(), 0.05);
+  if (mixer) mixer.update(dt);
+  controls.update();
+  renderer.render(scene, camera);
+}
+animate();
+
+window.addEventListener('resize', () => {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+});
+</script>
+</body>
+</html>
