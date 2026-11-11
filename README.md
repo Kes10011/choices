@@ -10,7 +10,7 @@ Open `index.html` in any modern browser — no build step, no server needed. Or 
 
 Built in Claude and exported 2026-11-11. `index.html` (14.4 MB) is the complete published game — a standalone React build in one file.
 
-Note: the chat's last message says work paused when Claude free usage ran out, while Claude was adding Michelle chasing with procedural animation — so this build is the latest published version and does **not** include the Michelle update yet.
+Note: the chat's last message says work paused when Claude free usage ran out, while Claude was adding a character named Michelle chasing with procedural animation — so this build is the latest published version and does **not** include that update. **Decision (2026-11-11, Kester): Michelle is dropped entirely — forget her. No named characters. NPCs/chasers are random male and female characters, no names needed.**
 
 ## The gameplay bar (from Kester's Claude chats)
 
