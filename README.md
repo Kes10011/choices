@@ -22,6 +22,7 @@ This is the standard every iteration is judged against:
 - **Combat/mechanics:** machete swing like Far Cry 2; an angry mob of people carrying bats appears from a corner or at random while exploring; ladder climbing like Call of Duty (walk up facing it, hold W, look around, E/Space to let go); fire drains health (16/sec); falls cause damage (none under 3 m, ~half health from a short building, lethal from ~12 m).
 - **Structure/feel:** stage 1 stays in daylight — save nighttime for a whole different stage (only stage 3 "NIGHT 3 — BROKEN BODY" is night); start screen text big, bold and near-white with light orange-tinted frosted glass behind the middle text only; decision pop-ups use the same readable font and orange glass.
 - **Process:** preview a new model (e.g. the chicken) BEFORE it is committed to the game, and changes must actually show up in the preview.
+- **Buildings are enterable (2026-11-11, Kester):** every building in the game must be enterable and explorable with a real interior — no exterior-only shells — so missions can happen inside them.
 
 ## Character direction (2026-11-11, Kester's verdict on the coded preview)
 
