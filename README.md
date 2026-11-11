@@ -1,6 +1,6 @@
 # Choices — Post-Apocalyptic Survival
 
-A single-file 3D post-apocalyptic survival game starring Kes, set 72 hours after the grid went down. Drive a car around an open village, climb ladders, survive fires and falls, make quiz-like decisions in thought bubbles, deal with animals, an angry mob, and Michelle chasing the player.
+A single-file 3D post-apocalyptic survival game starring Kes, set 72 hours after the grid went down. Drive a car around an open village, climb ladders, survive fires and falls, make quiz-like decisions in thought bubbles, deal with animals and an angry mob.
 
 ## Play it
 
@@ -23,6 +23,9 @@ This is the standard every iteration is judged against:
 - **Structure/feel:** stage 1 stays in daylight — save nighttime for a whole different stage (only stage 3 "NIGHT 3 — BROKEN BODY" is night); start screen text big, bold and near-white with light orange-tinted frosted glass behind the middle text only; decision pop-ups use the same readable font and orange glass.
 - **Process:** preview a new model (e.g. the chicken) BEFORE it is committed to the game, and changes must actually show up in the preview.
 
-## Iterating
+## Character direction (2026-11-11, Kester's verdict on the coded preview)
+
+- **Coded preview built:** `preview/character-preview.html` — unnamed survivor + wounded variant (walk/run/limp, bandage, blood), built entirely from smooth code shapes, self-contained. Live: https://kes10011.github.io/choices/preview/character-preview.html
+- **Kester's verdict: "we could work with that style i guess… even though it looks like what we got already."** The coded character is acceptable as a fallback, but it is the same visual tier as the current game characters — NOT the realism jump he wants. **Realistic external models remain the upgrade path** (see `asset-hunt.md` — best picks: Grab3D Woman Base Mesh CC0 with walk+run, FeralMotion Labrador, Polyy tree packs). Preview any realistic model the same way before committing it to the game.
 
 Iterations continue in Muse (Zyphar). Edit `index.html` directly — it is the whole game. Commit and push; Vercel auto-deploys if the repo is connected.
