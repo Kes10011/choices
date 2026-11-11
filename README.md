@@ -38,9 +38,10 @@ Iterations continue in Muse (Zyphar). Edit `index.html` directly — it is the w
 
 ## Swap log (§11 — asset integration, mirrored from INTEGRATION-DESIGN.md)
 
-Running total: `index.html` 15,725,996 bytes after the Old Car swap (was 14,417,332). Hard cap 32 MB.
+Running total: `index.html` 15,679,424 bytes after the Cow swap (was 14,417,332 before the Hen swap). Hard cap 32 MB.
 
 | Swap | Model | Source URL | License | Format in | GLB size | Pre-swap commit | Live verified |
 |---|---|---|---|---|---|---|---|
 | Hen → chicken (`q6`/`t.scene`) | Hen (free low-poly), author promiseijalade | CGTrader (per §2a inventory — page URL not in inventory) | Royalty Free | FBX → GLB | 230,052 B | f421b69 | YES — 2026-11-11 ~21:08 UTC: model-preview.html 200, live root hash == local db88457, hen.glb 200 (`.nojekyll` ab40008 fixed the deploy stall) |
-| Old Car 04 → wreck (`W6`/`c.scene`) | Generic Old Car 04, author Mavi3D | CGTrader (per §2a inventory — page URL not in inventory) | Royalty Free | FBX → GLB | 998,532 B | db88457 | PENDING — commit pushed, live poll running |
+| Old Car 04 → wreck (`W6`/`c.scene`) | Generic Old Car 04, author Mavi3D | CGTrader (per §2a inventory — page URL not in inventory) | Royalty Free | FBX → GLB | 998,532 B | db88457 | YES — 2026-11-11 21:12:48 UTC: live root hash 419020c82dc16e020475d27ab3ba95754f15061a1f63ba00b8cadf3a2854a3b2 == local (poll try 2) |
+| Cow → cow (`h6`/`M.scene`) | Cow (Holstein), author RetroStyleGames | CGTrader (per §2a inventory — page URL not in inventory) | Royalty Free | FBX → GLB | 331,548 B | 781e83e | YES — in-game verified locally (probe: skeleton 66/66 own bones, legs=4, head=true, hide/patch tints render black/white + brown/white); live poll pending at commit time — see §11 note below |
