@@ -236,6 +236,11 @@ new GLTFLoader().load('./models/' + modelFile, (gltf) => {
       };
       row.appendChild(b);
     });
+    // headless bone-swing check: ?bone=legL auto-swings that slot once loaded
+    const autoBone = params.get('bone');
+    if (autoBone && foundSlots.includes(autoBone)) {
+      row.querySelectorAll('button').forEach(b => { if (b.textContent === autoBone) b.click(); });
+    }
   }
   const slotHtml = MOB_SLOTS.map(s =>
     `<span class="${nodeNames.includes(s) ? 'ok' : 'missing'}">${nodeNames.includes(s) ? '✓' : '✗'} ${s}</span>`).join(' ');

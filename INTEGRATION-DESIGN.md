@@ -868,7 +868,7 @@ target device; if it doesn't, cut instance counts / texture resolution before sh
 
 | Swap | Model | Source URL | License | Format in | GLB size | Pre-swap commit | Live verified |
 |---|---|---|---|---|---|---|---|
-| (none yet) | | | | | | | |
+| Hen → chicken (`q6`/`t.scene`) | Hen (free low-poly), author promiseijalade | CGTrader (per §2a inventory — page URL not in inventory) | Royalty Free | FBX → GLB | 230,052 B | f421b69 | PENDING — Pages deploy stalled at 9c608b2 (model-preview.html 404, 18+ min); `.nojekyll` fix pushed as ab40008, poll running. Local gates all pass: preview bone-swing verified, post-embed byte-identical, headless in-game screenshot shows 3 hens at correct scale, skeleton clone 27/27 own bones, "Models loaded ✔" |
 
 ---
 

@@ -35,3 +35,11 @@ This is the standard every iteration is judged against:
 - **Kester's verdict: "we could work with that style i guess… even though it looks like what we got already."** The coded character is acceptable as a fallback, but it is the same visual tier as the current game characters — NOT the realism jump he wants. **Decision (2026-11-11, Kester): "we'll go with your style" — the coded style is the chosen direction for the characters.** **REVERSED (2026-11-11, Kester changed his mind): "i dont like the coded ones" — coded characters are OUT. Realistic external models are the direction for ALL characters and animals** (see `asset-hunt.md` for the hunt picks; Blend Swap is now the source Kester pointed to for animals).
 
 Iterations continue in Muse (Zyphar). Edit `index.html` directly — it is the whole game. Commit and push; Vercel auto-deploys if the repo is connected.
+
+## Swap log (§11 — asset integration, mirrored from INTEGRATION-DESIGN.md)
+
+Running total: `index.html` 14,513,660 bytes after the Hen swap (was 14,417,332). Hard cap 32 MB.
+
+| Swap | Model | Source URL | License | Format in | GLB size | Pre-swap commit | Live verified |
+|---|---|---|---|---|---|---|---|
+| Hen → chicken (`q6`/`t.scene`) | Hen (free low-poly), author promiseijalade | CGTrader (per §2a inventory — page URL not in inventory) | Royalty Free | FBX → GLB | 230,052 B | f421b69 | PENDING — Pages deploy stalled at 9c608b2 (model-preview.html 404, 18+ min); `.nojekyll` fix pushed as ab40008, poll running |
