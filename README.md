@@ -26,6 +26,6 @@ This is the standard every iteration is judged against:
 ## Character direction (2026-11-11, Kester's verdict on the coded preview)
 
 - **Coded preview built:** `preview/character-preview.html` — unnamed survivor + wounded variant (walk/run/limp, bandage, blood), built entirely from smooth code shapes, self-contained. Live: https://kes10011.github.io/choices/preview/character-preview.html
-- **Kester's verdict: "we could work with that style i guess… even though it looks like what we got already."** The coded character is acceptable as a fallback, but it is the same visual tier as the current game characters — NOT the realism jump he wants. **Realistic external models remain the upgrade path** (see `asset-hunt.md` — best picks: Grab3D Woman Base Mesh CC0 with walk+run, FeralMotion Labrador, Polyy tree packs). Preview any realistic model the same way before committing it to the game.
+- **Kester's verdict: "we could work with that style i guess… even though it looks like what we got already."** The coded character is acceptable as a fallback, but it is the same visual tier as the current game characters — NOT the realism jump he wants. **Decision (2026-11-11, Kester): "we'll go with your style" — the coded style is the chosen direction for the characters.** Realistic external models remain an option for animals (see `asset-hunt.md` — dog: FeralMotion Labrador).
 
 Iterations continue in Muse (Zyphar). Edit `index.html` directly — it is the whole game. Commit and push; Vercel auto-deploys if the repo is connected.
