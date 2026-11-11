@@ -38,8 +38,9 @@ Iterations continue in Muse (Zyphar). Edit `index.html` directly — it is the w
 
 ## Swap log (§11 — asset integration, mirrored from INTEGRATION-DESIGN.md)
 
-Running total: `index.html` 14,513,660 bytes after the Hen swap (was 14,417,332). Hard cap 32 MB.
+Running total: `index.html` 15,725,996 bytes after the Old Car swap (was 14,417,332). Hard cap 32 MB.
 
 | Swap | Model | Source URL | License | Format in | GLB size | Pre-swap commit | Live verified |
 |---|---|---|---|---|---|---|---|
-| Hen → chicken (`q6`/`t.scene`) | Hen (free low-poly), author promiseijalade | CGTrader (per §2a inventory — page URL not in inventory) | Royalty Free | FBX → GLB | 230,052 B | f421b69 | PENDING — Pages deploy stalled at 9c608b2 (model-preview.html 404, 18+ min); `.nojekyll` fix pushed as ab40008, poll running |
+| Hen → chicken (`q6`/`t.scene`) | Hen (free low-poly), author promiseijalade | CGTrader (per §2a inventory — page URL not in inventory) | Royalty Free | FBX → GLB | 230,052 B | f421b69 | YES — 2026-11-11 ~21:08 UTC: model-preview.html 200, live root hash == local db88457, hen.glb 200 (`.nojekyll` ab40008 fixed the deploy stall) |
+| Old Car 04 → wreck (`W6`/`c.scene`) | Generic Old Car 04, author Mavi3D | CGTrader (per §2a inventory — page URL not in inventory) | Royalty Free | FBX → GLB | 998,532 B | db88457 | PENDING — commit pushed, live poll running |

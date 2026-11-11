@@ -868,7 +868,8 @@ target device; if it doesn't, cut instance counts / texture resolution before sh
 
 | Swap | Model | Source URL | License | Format in | GLB size | Pre-swap commit | Live verified |
 |---|---|---|---|---|---|---|---|
-| Hen → chicken (`q6`/`t.scene`) | Hen (free low-poly), author promiseijalade | CGTrader (per §2a inventory — page URL not in inventory) | Royalty Free | FBX → GLB | 230,052 B | f421b69 | PENDING — Pages deploy stalled at 9c608b2 (model-preview.html 404, 18+ min); `.nojekyll` fix pushed as ab40008, poll running. Local gates all pass: preview bone-swing verified, post-embed byte-identical, headless in-game screenshot shows 3 hens at correct scale, skeleton clone 27/27 own bones, "Models loaded ✔" |
+| Hen → chicken (`q6`/`t.scene`) | Hen (free low-poly), author promiseijalade | CGTrader (per §2a inventory — page URL not in inventory) | Royalty Free | FBX → GLB | 230,052 B | f421b69 | YES — 2026-11-11 ~21:08 UTC: model-preview.html 200, live root hash == local db88457, hen.glb 200 (`.nojekyll` ab40008 fixed the deploy stall). Local gates all pass: preview bone-swing verified, post-embed byte-identical, headless in-game screenshot shows 3 hens at correct scale, skeleton clone 27/27 own bones, "Models loaded ✔" |
+| Old Car 04 → wreck (`W6`/`c.scene`) | Generic Old Car 04, author Mavi3D | CGTrader (per §2a inventory — page URL not in inventory) | Royalty Free | FBX → GLB | 998,532 B | db88457 | PENDING — local gates pass (preview verified, post-embed byte-identical, in-game screenshot shows the car at (3.2,9) with Rw() wreck tint). Live poll running. Notes: 295k polys → 17,375 verts / 27,924 faces @ decimate 0.035; textures mostly missing (only LAMP/GAUGE JPGs) — flat materials; Rw() tints `body`/`chrome` per wreck, other materials keep originals; faces +Z like the old wreck |
 
 ---
 
