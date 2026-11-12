@@ -38,7 +38,7 @@ Iterations continue in Muse (Zyphar). Edit `index.html` directly — it is the w
 
 ## Swap log (§11 — asset integration, mirrored from INTEGRATION-DESIGN.md)
 
-Running total: `index.html` 32,326,694 bytes after the Honey Locust oak swap (943ae84; was 31,780,598 after the Step-8 buildings embed). Hard cap 38 MB (raised by Kester 2026-11-12 — was 32 MB; step 8 shortfall ~5.8 MB).
+Running total: `index.html` 32,327,216 bytes after the code-fixes commit (a40dba1; was 32,326,694 after the Honey Locust oak swap). Hard cap 38 MB (raised by Kester 2026-11-12 — was 32 MB; step 8 shortfall ~5.8 MB).
 
 | Swap | Model | Source URL | License | Format in | GLB size | Pre-swap commit | Live verified |
 |---|---|---|---|---|---|---|---|
@@ -69,3 +69,4 @@ Running total: `index.html` 32,326,694 bytes after the Honey Locust oak swap (94
 | Village Home Broken → NEW (`villageBrokenGLB`/`vilBroken`) | Small Village broken home, author drezeldeen-tantawi | CGTrader (per §2a inventory row 11 — `small_village_fbx.zip`) | Royalty Free | FBX → GLB (Blender + meshoptimizer shrink) | 252,636 B | 879fe9f | YES — same hash/time (same commit 879fe9f) |
 | Long Hut → NEW (`hutGLB`/`hut`) | Medieval House / Enterable Long Hut, author Enterables | CGTrader (per §2a inventory row 8 — `export_concrete_house_003.zip`) | Royalty Free | FBX → GLB (Blender + meshoptimizer shrink) | 801,160 B | 879fe9f | YES — same hash/time (same commit 879fe9f) |
 | Oak → oak (`_6`/`r.scene`) | Honey Locust variant 2 (Gledista Triacanthos), XfrogPlants | CGTrader (per §2a inventory — Honey Locust tree, `Gledista_Triacanthos_FBX.zip`) | Royalty Free | FBX → GLB (Blender: real trunk decimated + procedural frond canopy, alphaMode MASK) | 454,128 B | 943ae84 | YES — 2026-11-12 20:42 UTC: live root hash d6b79575c13e0d6a05eedd17955a86cd356faa9a1332e91a075c5675da82a0a8 == local (poll try 1) |
+| CODE-ONLY fixes (no new models) | — | — | — | Code-only (10 exact-match replacements, work/code-fixes/patch.py) | +522 B | a40dba1 | YES — 2026-11-12 23:05 UTC: live root hash dbdbe172bae6054a… == local (poll try 1), index.html 32,326,694 → 32,327,216 B. Beacon: 60 m additive green beam + ground disc + brighter particles — unmissable at 100 m in daylight. POI icons: only well/pantry/cabinet keep them; E-prompt still fires at de-iconed POIs. Mob weapons: per-body calibrated socket quaternions (woman/worker/zane) — all three carry down-forward at rest. Perf: shadow 2048→1024 (bias -6e-4→-1.5e-3 — the old bias left acne stripes), bloom half-res, pixel ratio ≤1.25 + no AA on mobile; bench mean 116 ms vs 233 ms before (headless, shadow+bloom only). Zero console errors. |
