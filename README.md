@@ -38,7 +38,7 @@ Iterations continue in Muse (Zyphar). Edit `index.html` directly — it is the w
 
 ## Swap log (§11 — asset integration, mirrored from INTEGRATION-DESIGN.md)
 
-Running total: `index.html` 20,639,712 bytes after the Mob swap (b6d8b73; was 14,417,332 before the Hen swap). Hard cap 32 MB.
+Running total: `index.html` 24,290,053 bytes after the Road + clutter swap (eb344bd; was 14,417,332 before the Hen swap). Hard cap 32 MB.
 
 | Swap | Model | Source URL | License | Format in | GLB size | Pre-swap commit | Live verified |
 |---|---|---|---|---|---|---|---|
@@ -49,3 +49,11 @@ Running total: `index.html` 20,639,712 bytes after the Mob swap (b6d8b73; was 14
 | Worker → mob (`mobWorkerGLB`/`mobWorker`) | Worker Character, author adam127 (MakeHuman) | CGTrader (per §2a inventory — page URL not in inventory) | Royalty Free | FBX → GLB | 1,235,772 B | b6d8b73 | YES — 2026-11-12 01:42:53 UTC: live root hash 9921c47abbe9df1fa20db6720854f0b3aafab8959cc55bdcfc6fbcdaa353a036 == local (poll try 2) |
 | Woman → mob (`mobWomanGLB`/`mobWoman`, role key `woman`) | Woman Base Character (rigged), Grab3D | https://grab3d.com/models/characters/woman-base-character/ | CC0 1.0 | GLB (decimated + renamed + baked) | 1,140,196 B | b6d8b73 | YES — 2026-11-12 01:42:53 UTC: live root hash 9921c47abbe9df1fa20db6720854f0b3aafab8959cc55bdcfc6fbcdaa353a036 == local (poll try 2) |
 | Zane → mob (`mobZaneGLB`/`mobZane`) | Zane Ryder, author mahgadx | CGTrader (per §2a inventory — page URL not in inventory) | Royalty Free | FBX → GLB | 1,242,804 B | b6d8b73 | YES — 2026-11-12 01:42:53 UTC: live root hash 9921c47abbe9df1fa20db6720854f0b3aafab8959cc55bdcfc6fbcdaa353a036 == local (poll try 2) |
+| Pine → pine (`$6`/`n.scene`) | Pine tree, Grab3D | https://grab3d.com/models/nature/pine-tree/ | CC0 1.0 | GLB (texture-compressed) | 371,000 B | f06b855 | YES — 2026-11-12 ~02:56 UTC: live root hash 0b79b5d094de061f985ecb13f4a5c8c1102ea43bf322516cb666256813ac8a10 == local (poll try 1) |
+| Dead tree → dead (`AS`/`b.scene`) | Dead tree, Grab3D | https://grab3d.com/models/nature/dead-tree/ | CC0 1.0 | GLB (decimated 0.65 + texture-compressed) | 396,336 B | f06b855 | YES — same hash/time as pine (same commit f06b855) |
+| Road-straight → NEW (`roadStraightGLB`/`roadStraight`) | Road segment straight, Grab3D | https://grab3d.com/models/city/road-segment-straight/ | CC0 1.0 | GLB (texture-compressed) | 373,504 B | eb344bd | YES — 2026-11-12 03:13:26 UTC: live root hash 2cd620dddf73e032600e8c9a3bbbea015f94d622ba16db6109fc7c97905fb7c0 == local (poll try 1) |
+| Dirt-road → NEW (`dirtRoadGLB`/`dirtRoad`) | Dirt road (light), Grab3D | https://grab3d.com/models/city/dirt-road/ | CC0 1.0 | GLB (decimated 0.25 + texture-compressed) | 421,200 B | eb344bd | YES — same hash/time as road-straight (same commit eb344bd) |
+| Bush → NEW (`bushGLB`/`bush`) | Bush, Grab3D | https://grab3d.com/models/nature/bush/ | CC0 1.0 | GLB (decimated 0.65 + texture-compressed) | 340,440 B | eb344bd | YES — same hash/time (same commit eb344bd) |
+| Boulders → NEW (`bouldersGLB`/`boulders`) | Boulder rock set, Grab3D | https://grab3d.com/models/nature/boulder-rock-set/ | CC0 1.0 | GLB (texture-compressed) | 297,940 B | eb344bd | YES — same hash/time (same commit eb344bd) |
+| Rocks → NEW (`rocksGLB`/`rocks`) | Small rock set, Grab3D | https://grab3d.com/models/nature/small-rock-set/ | CC0 1.0 | GLB (texture-compressed) | 283,928 B | eb344bd | YES — same hash/time (same commit eb344bd) |
+| Stump → NEW (`stumpGLB`/`stump`) | Tree stump, Grab3D | https://grab3d.com/models/nature/tree-stump/ | CC0 1.0 | GLB (texture-compressed) | 295,676 B | eb344bd | YES — same hash/time (same commit eb344bd) |
