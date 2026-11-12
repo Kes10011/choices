@@ -38,7 +38,7 @@ Iterations continue in Muse (Zyphar). Edit `index.html` directly — it is the w
 
 ## Swap log (§11 — asset integration, mirrored from INTEGRATION-DESIGN.md)
 
-Running total: `index.html` 26,274,734 bytes after the Weapons swap (6488d49; was 14,417,332 before the Hen swap). Hard cap 32 MB.
+Running total: `index.html` 27,272,124 bytes after the Dog swap (fe79306; was 14,417,332 before the Hen swap). Hard cap 32 MB.
 
 | Swap | Model | Source URL | License | Format in | GLB size | Pre-swap commit | Live verified |
 |---|---|---|---|---|---|---|---|
@@ -61,3 +61,4 @@ Running total: `index.html` 26,274,734 bytes after the Weapons swap (6488d49; wa
 | Shotgun → NEW (`shotgunGLB`/`shotgun`) | Remington Model 31, CGTrader blackmax | CGTrader (per §2a inventory — page URL not in inventory) | Royalty Free | GLB | 104,608 B | 6488d49 | YES — 2026-11-12 05:07 UTC: live root hash 003d8737fffad63e10d6dd2c7999bef64a8060e10c38fc089e5b1a78aae3e746 == local (poll try 2) |
 | Machete → NEW (`macheteGLB`/`machete`) | Machete, CGTrader Kevingm2002 | CGTrader (per §2a inventory — page URL not in inventory) | Royalty Free | GLB | 55,532 B | 6488d49 | YES — same hash/time (same commit 6488d49) |
 | Flashlight → NEW (`flashlightGLB`/`flashlight`) | Flashlight Yellow, CGTrader diolator | CGTrader (per §2a inventory — page URL not in inventory) | Royalty Free | GLB | 81,024 B | 6488d49 | YES — same hash/time (same commit 6488d49) |
+| German Shepherd → dog (`d6`/`Q.scene`) | German Shepherd, author RetroStyleGames | https://www.cgtrader.com/free-3d-models/animal/mammal/german-shepherd-3d-model-6eb1ecb6-0808-4398-92d8-51b1951c60a1 | Royalty Free (no AI) | FBX → GLB (fbx2gltf + texture-attach) | 866,928 B | fe79306 | YES — 2026-11-12 16:30 UTC: live root hash 41ecd6b837f9bc28d4f8fb79e1270179ee4e985d8f7bffc2b1c381d48249c2d6 == local (poll try 2) |
