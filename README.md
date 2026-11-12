@@ -38,7 +38,7 @@ Iterations continue in Muse (Zyphar). Edit `index.html` directly — it is the w
 
 ## Swap log (§11 — asset integration, mirrored from INTEGRATION-DESIGN.md)
 
-Running total: `index.html` 31,780,598 bytes after the Step-8 buildings embed (879fe9f; was 27,272,124 after the Dog swap). Hard cap 38 MB (raised by Kester 2026-11-12 — was 32 MB; step 8 shortfall ~5.8 MB).
+Running total: `index.html` 32,326,694 bytes after the Honey Locust oak swap (943ae84; was 31,780,598 after the Step-8 buildings embed). Hard cap 38 MB (raised by Kester 2026-11-12 — was 32 MB; step 8 shortfall ~5.8 MB).
 
 | Swap | Model | Source URL | License | Format in | GLB size | Pre-swap commit | Live verified |
 |---|---|---|---|---|---|---|---|
@@ -68,3 +68,4 @@ Running total: `index.html` 31,780,598 bytes after the Step-8 buildings embed (8
 | Village Home Closed → NEW (`villageClosedGLB`/`vilClosed`) | Small Village closed home, author drezeldeen-tantawi | CGTrader (per §2a inventory row 11 — `small_village_fbx.zip`) | Royalty Free | FBX → GLB (Blender + meshoptimizer shrink) | 225,412 B | 879fe9f | YES — same hash/time (same commit 879fe9f) |
 | Village Home Broken → NEW (`villageBrokenGLB`/`vilBroken`) | Small Village broken home, author drezeldeen-tantawi | CGTrader (per §2a inventory row 11 — `small_village_fbx.zip`) | Royalty Free | FBX → GLB (Blender + meshoptimizer shrink) | 252,636 B | 879fe9f | YES — same hash/time (same commit 879fe9f) |
 | Long Hut → NEW (`hutGLB`/`hut`) | Medieval House / Enterable Long Hut, author Enterables | CGTrader (per §2a inventory row 8 — `export_concrete_house_003.zip`) | Royalty Free | FBX → GLB (Blender + meshoptimizer shrink) | 801,160 B | 879fe9f | YES — same hash/time (same commit 879fe9f) |
+| Oak → oak (`_6`/`r.scene`) | Honey Locust variant 2 (Gledista Triacanthos), XfrogPlants | CGTrader (per §2a inventory — Honey Locust tree, `Gledista_Triacanthos_FBX.zip`) | Royalty Free | FBX → GLB (Blender: real trunk decimated + procedural frond canopy, alphaMode MASK) | 454,128 B | 943ae84 | YES — 2026-11-12 20:42 UTC: live root hash d6b79575c13e0d6a05eedd17955a86cd356faa9a1332e91a075c5675da82a0a8 == local (poll try 1) |
