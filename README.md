@@ -38,7 +38,7 @@ Iterations continue in Muse (Zyphar). Edit `index.html` directly — it is the w
 
 ## Swap log (§11 — asset integration, mirrored from INTEGRATION-DESIGN.md)
 
-Running total: `index.html` 27,272,124 bytes after the Dog swap (fe79306; was 14,417,332 before the Hen swap). Hard cap 32 MB.
+Running total: `index.html` 31,780,598 bytes after the Step-8 buildings embed (879fe9f; was 27,272,124 after the Dog swap). Hard cap 38 MB (raised by Kester 2026-11-12 — was 32 MB; step 8 shortfall ~5.8 MB).
 
 | Swap | Model | Source URL | License | Format in | GLB size | Pre-swap commit | Live verified |
 |---|---|---|---|---|---|---|---|
@@ -62,3 +62,9 @@ Running total: `index.html` 27,272,124 bytes after the Dog swap (fe79306; was 14
 | Machete → NEW (`macheteGLB`/`machete`) | Machete, CGTrader Kevingm2002 | CGTrader (per §2a inventory — page URL not in inventory) | Royalty Free | GLB | 55,532 B | 6488d49 | YES — same hash/time (same commit 6488d49) |
 | Flashlight → NEW (`flashlightGLB`/`flashlight`) | Flashlight Yellow, CGTrader diolator | CGTrader (per §2a inventory — page URL not in inventory) | Royalty Free | GLB | 81,024 B | 6488d49 | YES — same hash/time (same commit 6488d49) |
 | German Shepherd → dog (`d6`/`Q.scene`) | German Shepherd, author RetroStyleGames | https://www.cgtrader.com/free-3d-models/animal/mammal/german-shepherd-3d-model-6eb1ecb6-0808-4398-92d8-51b1951c60a1 | Royalty Free (no AI) | FBX → GLB (fbx2gltf + texture-attach) | 866,928 B | fe79306 | YES — 2026-11-12 16:30 UTC: live root hash 41ecd6b837f9bc28d4f8fb79e1270179ee4e985d8f7bffc2b1c381d48249c2d6 == local (poll try 2) |
+| Medieval House → NEW (`houseGLB`/`medHouse`) | Medieval House (Enterable Long Hut), author Enterables | CGTrader (per §2a inventory row 8 — `export_concrete_house_003.zip`) | Royalty Free | FBX → GLB (Blender, 0.5x scale) | 1,025,004 B | 879fe9f | YES — 2026-11-12 20:25 UTC: live root hash 93e987ba489333bf08cbd211105654218e1f3b199c9ea2714c3a90e9a6c6590d == local (poll try 2) |
+| Windmill → NEW (`windmillGLB`/`windmill`) | Medieval Wooden Silo Windmill, author Enterables | CGTrader (per §2a inventory row 9 — `-t_hut_007_export.zip`) | Royalty Free | FBX → GLB (Blender, native scale) | 767,580 B | 879fe9f | YES — same hash/time (same commit 879fe9f) |
+| Village Home Main → NEW (`villageMainGLB`/`vilMain`) | Small Village main home, author drezeldeen-tantawi | CGTrader (per §2a inventory row 11 — `small_village_fbx.zip`) | Royalty Free | FBX → GLB (Blender + meshoptimizer shrink) | 305,752 B | 879fe9f | YES — same hash/time (same commit 879fe9f) |
+| Village Home Closed → NEW (`villageClosedGLB`/`vilClosed`) | Small Village closed home, author drezeldeen-tantawi | CGTrader (per §2a inventory row 11 — `small_village_fbx.zip`) | Royalty Free | FBX → GLB (Blender + meshoptimizer shrink) | 225,412 B | 879fe9f | YES — same hash/time (same commit 879fe9f) |
+| Village Home Broken → NEW (`villageBrokenGLB`/`vilBroken`) | Small Village broken home, author drezeldeen-tantawi | CGTrader (per §2a inventory row 11 — `small_village_fbx.zip`) | Royalty Free | FBX → GLB (Blender + meshoptimizer shrink) | 252,636 B | 879fe9f | YES — same hash/time (same commit 879fe9f) |
+| Long Hut → NEW (`hutGLB`/`hut`) | Medieval House / Enterable Long Hut, author Enterables | CGTrader (per §2a inventory row 8 — `export_concrete_house_003.zip`) | Royalty Free | FBX → GLB (Blender + meshoptimizer shrink) | 801,160 B | 879fe9f | YES — same hash/time (same commit 879fe9f) |
