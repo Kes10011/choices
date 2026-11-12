@@ -38,7 +38,7 @@ Iterations continue in Muse (Zyphar). Edit `index.html` directly — it is the w
 
 ## Swap log (§11 — asset integration, mirrored from INTEGRATION-DESIGN.md)
 
-Running total: `index.html` 25,952,112 bytes after the Wounded Stranger swap (4f34083; was 14,417,332 before the Hen swap). Hard cap 32 MB.
+Running total: `index.html` 26,274,734 bytes after the Weapons swap (6488d49; was 14,417,332 before the Hen swap). Hard cap 32 MB.
 
 | Swap | Model | Source URL | License | Format in | GLB size | Pre-swap commit | Live verified |
 |---|---|---|---|---|---|---|---|
@@ -58,3 +58,6 @@ Running total: `index.html` 25,952,112 bytes after the Wounded Stranger swap (4f
 | Rocks → NEW (`rocksGLB`/`rocks`) | Small rock set, Grab3D | https://grab3d.com/models/nature/small-rock-set/ | CC0 1.0 | GLB (texture-compressed) | 283,928 B | eb344bd | YES — same hash/time (same commit eb344bd) |
 | Stump → NEW (`stumpGLB`/`stump`) | Tree stump, Grab3D | https://grab3d.com/models/nature/tree-stump/ | CC0 1.0 | GLB (texture-compressed) | 295,676 B | eb344bd | YES — same hash/time (same commit eb344bd) |
 | Wounded Stranger → NEW (`strangerGLB`/`stranger`) | Worker Character (reused mob body), CGTrader adam127 | CGTrader (per §2a inventory — page URL not in inventory) | Royalty Free | GLB (pose-baked, props added) | 1,246,208 B | 4f34083 | YES — 2026-11-12 03:35 UTC: live root hash 4a124779a95b9307a5158630fd4cf5b4e79582ff4dd6b40d81848566503b4310 == local (poll try 2) |
+| Shotgun → NEW (`shotgunGLB`/`shotgun`) | Remington Model 31, CGTrader blackmax | CGTrader (per §2a inventory — page URL not in inventory) | Royalty Free | GLB | 104,608 B | 6488d49 | YES — 2026-11-12 05:07 UTC: live root hash 003d8737fffad63e10d6dd2c7999bef64a8060e10c38fc089e5b1a78aae3e746 == local (poll try 2) |
+| Machete → NEW (`macheteGLB`/`machete`) | Machete, CGTrader Kevingm2002 | CGTrader (per §2a inventory — page URL not in inventory) | Royalty Free | GLB | 55,532 B | 6488d49 | YES — same hash/time (same commit 6488d49) |
+| Flashlight → NEW (`flashlightGLB`/`flashlight`) | Flashlight Yellow, CGTrader diolator | CGTrader (per §2a inventory — page URL not in inventory) | Royalty Free | GLB | 81,024 B | 6488d49 | YES — same hash/time (same commit 6488d49) |
