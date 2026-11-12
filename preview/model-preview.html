@@ -185,6 +185,11 @@ new GLTFLoader().load('./models/' + modelFile, (gltf) => {
   modelRoot.position.sub(center); modelRoot.position.y += size.y / 2;
   const maxDim = Math.max(size.x, size.y, size.z);
   camera.position.set(maxDim * 0.6, size.y * 0.8 + 0.4, maxDim * 1.8);
+  // ?cam=side|front|back repositions for gait inspection (default: 3/4 view)
+  const camMode = params.get('cam');
+  if (camMode === 'side') camera.position.set(maxDim * 1.9, size.y * 0.65, 0.15);
+  else if (camMode === 'front') camera.position.set(0, size.y * 0.8, maxDim * 1.9);
+  else if (camMode === 'back') camera.position.set(0, size.y * 0.8, -maxDim * 1.9);
   controls.target.set(0, size.y / 2, 0);
   // silhouette stands beside the model, clear of the camera
   silhouette.position.set(size.x / 2 + 0.8, 0, -0.2);
