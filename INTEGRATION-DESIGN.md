@@ -1,8 +1,9 @@
 # Choices — Asset Integration Design Doc
 
 **Status:** DRAFT v1 (Elephant) — 2026-11-11 ~15:50 AST; revised 2026-11-11 ~20:00 AST
-(Goldfish 3/3 resolved) and ~20:20 AST (Goldfish 1/3 + 2/3 resolved). **ALL THREE GOLDFISH
-REVIEWS RESOLVED — the doc is now vetted and buildable.**
+(Goldfish 3/3 resolved) and ~20:20 AST (Goldfish 1/3 + 2/3 resolved); revised 2026-11-12
+~00:20 AST (Grab3D Woman §2a(i) + Grab3D extras §2a(ii) + road/clutter design + honest
+~37 MB projection). **ALL THREE GOLDFISH REVIEWS RESOLVED — the doc is now vetted and buildable.**
 **Author:** coordinator (Elephant session). **Review:** Goldfish 1/3, 2/3, 3/3 all resolved 2026-11-11.
 **Goal:** get every CGTrader download Kester picked into the game, replace the boxy/primitive
 models with realistic ones, make buildings enterable, add the door-knob glow, and improve
@@ -216,6 +217,24 @@ Session B — `~/workspace/browser_downloads/sess-1125121562/` (637 MB):
 
 **Conversion (in flight, preview-gate only):** decimate to ≤18k verts / ≤1.5 MB GLB + standard 6-slot bone rename (same pattern as `work/rig_girl.py`; measure her A-pose rest angles per-model — her joints are `Hips, LeftUpLeg, LeftLeg, LeftFoot, LeftToeBase, RightUpLeg, RightLeg, RightFoot, RightToeBase, Spine02, Spine01, Spine, LeftShoulder, LeftArm, LeftForeArm, LeftHand, neck, Head, head_end, headfront, RightShoulder, RightArm, RightForeArm, RightHand`). **Walk gate (§8):** she must walk in the preview with legs planting (not paddling), then the pool swap (replace the `mobGirlGLB` const) happens as a coordinator decision. **If she fails the gate** (static-only, wrong rig, uncanny), the coordinator tells the step-4 builder explicitly and the cartoon Girl goes back in sparingly as the fallback — the builder does NOT put the Girl in on its own initiative. **AI disclosure:** the mesh is AI-assisted (Meshy image-to-3D, cleaned in Blender — see LICENSE.txt); counts as AI-assisted if a platform requires disclosure (e.g. Steam). The game ships on GitHub Pages, so no disclosure is currently required — record it here so it is not lost.
 
+### 2a(ii). Grab3D extras — trees, road, ground clutter (landed 2026-11-12 ~00:10 AST; all CC0 1.0, all grounded Y=0)
+
+Fetcher done (agent e6c238f0), verified on disk by the parent: 11 GLBs, ~57 MB, in `work/incoming-grab3d/` (full table: `work/incoming-grab3d/INVENTORY.md`; each model has its own LICENSE + manifest + NOTE alongside). **All CC0 1.0, no login, no CGTrader slots touched.** Pine/road/bushes/rocks/dead-trees are DONE — no CGTrader slots needed for them.
+
+| Role | File | URL | Size | Verified | Verdict |
+|---|---|---|---|---|---|
+| Pine / conifer tree | `pine-tree/pine-tree.glb` | https://grab3d.com/models/nature/pine-tree/ | 949,600 B | 8,032 tris, 5.7 m tall, grounded | **KEEPER → pine slot `$6`/`n.scene` (§3a)** |
+| Dead tree | `dead-trees/dead-tree.glb` | https://grab3d.com/models/nature/dead-tree/ | 1,639,960 B | 13,849 tris, 4.5 m tall, grounded | **KEEPER → dead-tree slot `AS`/`b.scene` (§3a)** |
+| Tree stump | `dead-trees/tree-stump.glb` | https://grab3d.com/models/nature/tree-stump/ | 690,496 B | 8,264 tris, grounded | **KEEPER → ground clutter (§3b)** |
+| Road segment (asphalt) | `road-segment/road-segment-straight.glb` | https://grab3d.com/models/city/road-segment-straight/ | 5,537,920 B | 4,220 tris, 11.8 m tile | **KEEPER → main road (§3b). NOTE: 5.5 MB = heavy textures — compress to ≤512 px before embedding.** |
+| Dirt road | `road-segment/dirt-road-light.glb` | https://grab3d.com/models/city/dirt-road/ | 1,589,284 B | 24,551 tris (light version), 11.8 m tile, rural fit | **KEEPER → village paths + chase back-roads (§3b)** |
+| Bush | `bushes-rocks/bush.glb` | https://grab3d.com/models/nature/bush/ | 1,410,856 B | 11,570 tris, ~1.1 m, grounded | **KEEPER → ground clutter (§3b)** |
+| Boulders | `bushes-rocks/boulder-rock-set.glb` | https://grab3d.com/models/nature/boulder-rock-set/ | 751,484 B | 10,112 tris, grounded | **KEEPER → ground clutter (§3b)** |
+| Scatter rocks | `bushes-rocks/small-rock-set.glb` | https://grab3d.com/models/nature/small-rock-set/ | 730,564 B | 6,656 tris, grounded | **KEEPER → ground clutter (§3b)** |
+| Dog (candidate) | `dog-candidate/dog.glb` | https://grab3d.com/models/animals/dog/ | 15,998,932 B | **STATIC — 0 skins, 0 anims, 329,190 tris** | **REJECTED as a swap — not rigged.** Kept on disk as reference only. German Shepherd (CGTrader) remains the pick, first slot tomorrow. |
+
+Skipped by the fetcher, with reason: spruce-tree (heavier than pine), snowy-pine-tree (snow), berry-bush (berries wrong for a wasteland), rocky-outcrop (heavier single piece; the sets cover it), spooky-tree (stylized), wolf (not a dog, 800k tris). Do not re-pick them.
+
 ### 2b. Still expected + per-swap dependency rule (Goldfish fix — replaces the old blanket ban)
 **Rule:** there is NO blanket "do not start until everything lands". Each swap depends on
 specific files; a swap whose file hasn't landed is SKIPPED with a clearly-marked README
@@ -227,8 +246,9 @@ build start and the "Landed?" column updated.
 tomorrow): https://www.cgtrader.com/free-3d-models/animal/mammal/german-shepherd-3d-model-6eb1ecb6-0808-4398-92d8-51b1951c60a1 — Royalty Free, FBX zip
 `RSG_DogsPack_GermanShepherd_FBX.zip`, 18.5 MB, rigged, 8 animations (walk, run with
 leans, idle), 2K PBR, 2,272 polys. One review notes the mesh around the neck is broken.
-**Not yet selected or downloaded:** pine/conifer tree, road segment, bushes/rocks/dead
-trees — not in this build unless Kester picks them.
+**Not yet selected or downloaded:** nothing — pine/conifer tree, road segment, bushes/rocks/dead
+trees all landed from Grab3D tonight (§2a(ii), CC0, no CGTrader slots needed). **Still open
+for tomorrow's CGTrader run: German Shepherd dog ONLY (first slot).**
 **REJECTED — do not re-pick:** Walking People Pack (free, Royalty Free, but 5 static
 unrigged posed models, no animations — not hero material); Amber female model (Editorial
 license, "Not for commercial use" — rejected); stylized 3D Chicken Model and faceless
@@ -244,6 +264,10 @@ Ginger Female (rejected).
 | Enterable buildings (step 8) | Medieval House ✅ · Windmill ✅ · village ✅ | ✅ YES (all three landed — identities corrected, §2a rows 8/9/11) |
 | Vehicles (step 9) | Jeep / Norton / Military Truck / Old Car 04 | ✅ YES |
 | Fillers (step 10) | NY buildings ✅ (glb.rar = L_build GLBs) · Medieval Block ❌ DROPPED (Lumion, no usable format) · Archviz — convert-or-drop | PARTIAL (block dropped, archviz TBD) |
+| Pine → pine (step 7) | pine-tree.glb (Grab3D, CC0) | ✅ YES (8,032 tris, 5.7 m — §2a(ii)) |
+| Dead tree → dead tree (step 7) | dead-tree.glb (Grab3D, CC0) | ✅ YES (13,849 tris, 4.5 m — §2a(ii)) |
+| Road + ground clutter (step 7) | road-segment-straight / dirt-road-light / bush / boulder-rock-set / small-rock-set / tree-stump (all Grab3D, CC0) | ✅ YES (§2a(ii)) |
+| Dog → dog (step 12) | German Shepherd FBX (CGTrader) | ❌ NO — tomorrow, first slot. Grab3D dog is STATIC (0 skins, 0 anims, 329k tris) — REJECTED as a swap, kept on disk as reference only. |
 | Cow / bird (slot into steps 2/7) | Cow / Achara bird | ✅ YES |
 | Dog (step 2/7) | German Shepherd | ❌ NO — tomorrow, first priority. The current dog (Cube) stays until then. |
 
@@ -304,10 +328,12 @@ same slot; nothing else about the dog code path changes.
 |---|---|---|---|
 | `q6` → `t.scene` | chicken (154 KB) | **Hen** | **ADAPTER REQUIRED — BONE RENAMES, NOT EMPTY PROXIES.** Game code needs material `"feather"` and nodes `legL`, `legR`, `head`, and it ROTATES those nodes to animate the legs (`gait()`). **An Empty parented to a bone is inert on a skinned mesh** — vertices follow bone matrices only, so rotating an Empty rotates nothing in the mesh. The fix is to rename the BONES themselves in Blender: `Bip01_L_Thigh`→`legL`, `Bip01_R_Thigh`→`legR`, `Bip01_Head`→`head`. Bone renaming is safe for skinning (skinning is index-based, not name-based). Then verify in the preview that rotating each renamed bone swings on the expected axis — a bone's local X axis is generally NOT the primitive group's swing axis. Material: rename `mati_chicken` to `feather` (keep the roughness/metallic maps + flat diffuse color [191,127,0] — there is NO diffuse texture). Which Hen meshes carry `mati_chicken` (beak/feet/comb may be separate materials) is listed from the Blender inspection — only meshes whose material is named `feather` get the colour tint in `swap()`. If the `.blend` route is used, verify its textures are packed first (it may reference unpacked external textures). Scale: `cg(t.scene, .48)` scales the FOOTPRINT (max(x,z)=.48), not the height — only `cg(..., P=true)` scales by height. Measure the Hen's bounding box and set the scale so the bird's footprint is ~0.5 m across. If the FBX has a baked walk/peck take, keep it named and note it; the game drives legs procedurally, so baked clips are a bonus, not a requirement. Sound: kind stays `"chicken"` → hen/rooster MP3 already wired. |
 | `h6` → `M.scene` | cow (357 KB) | **Cow (LANDED — ShepherdValley Holstein, RetroStyleGames, 3,814 polys, 5 animations, PBR 2K textures)** | Same bone-rename pattern as the hen: rename the leg bones to `legFL/legFR/legBL/legBR` and the head bone to `head` (**NO Empty proxies — they are inert on skinned meshes**). Materials `"hide"`/`"patch"` are material renames (fine). **5 baked animations are a bonus, not the plan** — the code drives legs procedurally; note them in the swap log. If the cow model has no leg bones to rename, the swap is blocked until a rigged cow is found or the code path changes. Scale: `cg(M.scene, 2.6)` is a footprint, not a height. |
-| `d6` → `Q.scene` | dog (116 KB, **single Cube mesh** — the dog IS a cube) | **Dog (NOT YET DOWNLOADED — German Shepherd, RetroStyleGames, first priority tomorrow; 2,272 polys, 8 animations, 2K PBR). The current dog (Cube) stays until then — the dog swap is deferred to a follow-up commit after the download lands.** | The old "dog" is one Cube; the swap replaces it with a real dog GLB in the same slot. Dog/cat use the shader rig (`rig()` — bounding-box leg swing, NO node names needed). **Candidate dog GLBs must pass the shader-shear check in §8** — the shader swings vertices below 55% height, and a skinned/rigged GLB dog may double-animate or shear under it; "any quadruped-shaped dog GLB works" is overconfident. Verify the shape reads as a dog at 0.95 footprint (`cg(Q.scene, .95)`) and the leg-swing shader doesn't shear the head. Fallback if it fails: static pose (no leg swing) — do not ship a sheared dog. One review notes the mesh around the neck is broken — check the neck in Blender before the swap. |
+| `d6` → `Q.scene` | dog (116 KB, **single Cube mesh** — the dog IS a cube) | **Dog (NOT YET DOWNLOADED — German Shepherd, RetroStyleGames, first priority tomorrow; 2,272 polys, 8 animations, 2K PBR). The current dog (Cube) stays until then — the dog swap is deferred to a follow-up commit after the download lands. Grab3D's dog was checked and REJECTED (STATIC — 0 skins, 0 anims, 329,190 tris; kept on disk as reference only, `work/incoming-grab3d/dog-candidate/dog.glb`).** | The old "dog" is one Cube; the swap replaces it with a real dog GLB in the same slot. Dog/cat use the shader rig (`rig()` — bounding-box leg swing, NO node names needed). **Candidate dog GLBs must pass the shader-shear check in §8** — the shader swings vertices below 55% height, and a skinned/rigged GLB dog may double-animate or shear under it; "any quadruped-shaped dog GLB works" is overconfident. Verify the shape reads as a dog at 0.95 footprint (`cg(Q.scene, .95)`) and the leg-swing shader doesn't shear the head. Fallback if it fails: static pose (no leg swing) — do not ship a sheared dog. One review notes the mesh around the neck is broken — check the neck in Blender before the swap. |
 | `Z6` → `i.scene` | bird (185 KB, `KeyAction` ×3 anims) | **Achara Bird (LANDED — pixol3d, 22,905 polys, rigged + animated in flight; its 30 MB `tex.rar` texture pack was NOT downloaded — verify textures in Blender; if untextured, flat colours / the game's bird textures)** | Game plays `birdClips[0]` if present, else static. If the new bird has a baked flap clip, keep it as clip 0. If it has no animation, the builder adds a code wing-flap (rotate wing nodes) — do NOT ship a frozen bird. (The old "relies on the primitive birds' wing planes" fallback is wrong: the current bird GLB has `KeyAction` anims, not wing planes.) Decimate (22,905 polys is heavy for a bird — §7 budget ≤300 KB GLB). |
 | `W6` → `c.scene` | wreck / car #2 (87 KB) | **Generic Old Car 04 (LANDED — Mavi3D, 295,000 polys; decimate hard to ≤20k; one commenter reported textures did not appear in their download — verify on extraction; if missing, flat materials)** | Direct swap. Verify scale vs the current wreck (measure bounding box) and orientation (front faces the same way — the stranger sits against its side at (2.2, 7.2)). Interior exists (medium detail) — good for the stranger scene. |
 | `_6` → `r.scene` | oak tree (43 KB) | **Honey Locust** (1 of the 6 variants) | Pick the best-looking variant by eye in the preview. **The `G` tree array CANNOT be extended to a 4th variant this way** — `G` is built by cloning nodes named `leaves`/`tree` with suffixes `''`, `.001`, `.002` from the TREES GLB; the Honey Locust is a separate GLB with different node names and no `.003` variant. A second Locust variant needs its OWN loader path (own node names, measured-height scaling) — write it separately and leave the `G` suffix loop untouched. The oak uses `r.scene` RAW (no `cg()`), so the Locust must match the oak's native scale, not a `cg()`-normalized one. **One embedded const, referenced twice — the oak replacement and the 4th tree variant share the SAME base64 const; do NOT duplicate the bytes.** |
+| `$6` → `n.scene` | pine (bark + cones) | **Grab3D Pine (LANDED — CC0, 8,032 tris, 5.7 m, grounded Y=0; §2a(ii))** | Direct swap, same pattern as the oak: the pine is used RAW (no `cg()` — verify how the current pine is scaled in the bundle before touching it; if it uses `cg()`, match the footprint call). Verify the pine reads as a conifer at game distance (5.7 m source height vs the old pine's in-game height — measure, don't assume). One const, instanced/cloned wherever pines stand. |
+| `AS` → `b.scene` | dead tree | **Grab3D Dead Tree (LANDED — CC0, 13,849 tris, 4.5 m, grounded Y=0; §2a(ii))** | Direct swap. Same scale check as the pine (measure the old dead tree's in-game height first). The dead tree is the wasteland's signature silhouette — verify it reads bare/dead (no leaves) in the preview at distance. One const, instanced/cloned wherever dead trees stand. |
 
 ### 3b. Additions (new consts / new code paths — no old slot removed)
 
@@ -328,6 +354,8 @@ same slot; nothing else about the dog code path changes.
 | **Concrete House 003 — DELETED as a separate row** | `export_concrete_house_003.zip` IS the enterable Medieval House (Long Hut) — see the Medieval house row above. There is no separate modern-house filler. | — |
 | **Maxtree grasses** (terrain) | 6 grass FBXs | Replace the instanced grass-tuft geometry: the game draws 4400 instanced tufts from ONE `InstancedMesh` with ONE geometry (0.9×0.7 plane) and ONE material (alphaTest .35, DoubleSide). **One InstancedMesh cannot mix species "randomly per instance".** Each Maxtree species is a multi-mesh, multi-material plant — it must be MERGED/BAKED into one geometry + one material PER SPECIES (merge step in §7), then one InstancedMesh per species (2 species: Cynodon + Zoysia — the smallest, most grass-like), per-plant budget ≤2k polys, instance count ~1500–2500 total (full 3D plants cost more than crossed planes; ~2,000 × ~2k polys ≈ 4M polys needs the §9 fps gate). Material: alphaTest .35 handling per species (Maxtree grasses are typically alpha-tested leaf cards). Keep the same placement rules (the `gA`/`iA` exclusion zones around buildings/roads). |
 | **Honey Locust** (tree variety) | 1–2 of 6 variants | See the oak row in §3a: one Locust variant replaces the oak const (`_6`/`r.scene`); a second variant needs its OWN loader path (the `G` suffix loop cannot be extended). Do not embed more than 2 variants. |
+| **Road tiles** (NEW — no existing road geometry) | Grab3D road-segment-straight (asphalt, 4,220 tris, 11.8 m tile) + dirt-road-light (24,551 tris, 11.8 m tile) — both CC0, §2a(ii) | **One embedded const per tile type; tiles are placed as clones/instances along the road — NEVER one const per tile.** Asphalt tiles pave the main drivable road (the highway route, including the chase fork's highway branch, Appendix A); dirt tiles pave village paths and the chase back-roads fork. **Builder maps the existing road path FIRST** (from the terrain visuals + the three car positions + the truck roadblock at (0, −80) + the checkpoint) and lays tiles to cover it — the game has no road-path data to read, so the path comes from a top-down screenshot + the known landmarks, verified by a top-down screenshot BEFORE the road commit. Straight tiles only — no curves in the set; bends are faked by yawing successive tiles in small steps. Tiles are ground dressing: NO collision change (the road is already drivable terrain), NO gameplay change. Texture work: the straight road is 5.5 MB of heavy textures — compress to ≤512 px (§7 budget ≤500 KB GLB per type). |
+| **Ground clutter** (NEW — dressing only) | Grab3D bush (11,570 tris, ~1.1 m) · boulder-rock-set (10,112 tris) · small-rock-set (6,656 tris) · tree-stump (8,264 tris) — all CC0, grounded Y=0, §2a(ii) | **One embedded const per type; scattered as clones.** Placement rules: keep ≥2 m clear of the road centreline, building doorways, supply POIs and the checkpoint path; cluster around trees/buildings/field edges, never in a neat grid. NO collision in this build (dressing only — walking through a small rock is accepted; boulders are small sets, not walls). Verify scatter density in a top-down screenshot — sparse enough to read as a wasteland, not a rock garden. |
 
 ### 3c. Keep as-is (no swap)
 - `u6`/`P.scene` car (sedan) — **no longer the chase car.** The Jeep is the car Kes finds
@@ -340,13 +368,14 @@ same slot; nothing else about the dog code path changes.
   procedurally built; the house GLB's placement is not yet mapped. Do not swap blind.
 - `F6`/`j` cat — no cat replacement was ordered. Keep.
 - `H6`/`B` cottage — **trace its usage before touching it** (same reason as the house).
-- `f6`/`U` barrel, `X6`/`E` crate, `$6`/`n` pine, `AS`/`b` dead tree, `PS`/`y` far tree,
-  `iS`/`T` shed, `TS`/`s` fire (campfire with animations — already works).
+- `f6`/`U` barrel, `X6`/`E` crate, `PS`/`y` far tree,
+  `iS`/`T` shed, `TS`/`s` fire (campfire with animations — already works). (Pine `$6`/`n` and
+  dead tree `AS`/`b` were here — both now have Grab3D replacements, §3a.)
 
 **Residual boxy list (known + accepted in this build — the doc does NOT claim the swap fixes
 "boxy" for these):** mob weapons (cleaver/bat/pipe/crowbar stay primitive — no CGTrader
-mob-weapon models were ordered); cat, barrel, crate, shed, house, cottage, pine/dead/far
-trees stay as-is. Kester is told plainly: these are the accepted remainder, not an oversight.
+mob-weapon models were ordered); cat, barrel, crate, shed, house, cottage, far tree stay
+as-is. Kester is told plainly: these are the accepted remainder, not an oversight.
 
 ---
 
@@ -673,6 +702,10 @@ on the FINAL `index.html` BYTES, not on GLB bytes):**
 | Cow / Dog / Bird (when they land) | ≤ 600 / 600 / 300 KB | ≤ 0.8 / 0.8 / 0.4 MB | |
 | Honey Locust (1 variant) | ≤ 600 KB | ≤ 0.8 MB | One const, referenced twice (oak + 4th tree variant) — counted ONCE. |
 | Each grass species (2 max) | ≤ 250 KB | ≤ 0.33 MB | 2 species max (was 3). |
+| Grab3D Pine | ≤ 400 KB | ≤ 0.53 MB | 8,032 tris, 5.7 m — already light; mostly texture compression. Replaces the pine slot (old GLB ~40 KB freed). |
+| Grab3D Dead Tree | ≤ 400 KB | ≤ 0.53 MB | 13,849 tris, 4.5 m. Replaces the dead-tree slot. |
+| Road tile (each type) | ≤ 500 KB | ≤ 0.67 MB | Straight road source is 5.5 MB (heavy textures) — compress to ≤512 px. Dirt road 24,551 tris. One const per type, instanced along the road. |
+| Ground clutter (each type) | ≤ 350 KB | ≤ 0.47 MB | Bush 11,570 tris / boulders 10,112 / rocks 6,656 / stump 8,264. One const per type, scattered clones. |
 | Medieval house | ≤ 1.0 MB | ≤ 1.33 MB | |
 | Windmill | ≤ 800 KB | ≤ 1.07 MB | |
 | Small village (4 homes) | ≤ 1.0 MB | ≤ 1.33 MB | If the village ships as 4 separate GLBs, the 1.0 MB budget is the TOTAL for all four. |
@@ -683,7 +716,7 @@ on the FINAL `index.html` BYTES, not on GLB bytes):**
 | Shotgun / Machete / Flashlight | ≤ 200 KB each | ≤ 0.27 MB each | |
 | **CORE TOTAL added (GLB)** | **≤ ~14.9 MB** | **≤ ~19.9 MB embedded** | Humans revised 2.7 → 4.5 MB GLB (see the human row above). |
 | Less: removed GLBs (chicken 154 + cow 357 + dog 116 + bird 185 + wreck 87 + oak 43 KB ≈ 0.92 MB GLB ≈ 1.23 MB base64 freed) | | **−1.23 MB** | |
-| **NET added to `index.html`** | | **≤ ~18.6 MB** | Current file 14.4 MB → target total **~33.0 MB — OVER the 32 MB hard cap by ~1 MB.** The cap stands: if the running total (tracked in §11) projects over 32 MB, cut per the cut order below (Zane is cut #3 — dropping him saves ~2.4 MB embedded and brings the total back to ~30.6 MB). |
+| **NET added to `index.html`** | | **≤ ~18.6 MB** | Current file 14.4 MB → target total **~33.0 MB — OVER the 32 MB hard cap by ~1 MB.** With the Grab3D extras (§2a(ii): 8 new consts ≈ +4.2 MB embedded) the projection is **~37 MB — OVER by ~5 MB.** The cap stands: the running total (tracked in §11) decides at each swap, and the cut order below applies — the extras are the newest pure additions and are cut as a group (after fillers, before Zane) if the total projects over 32 MB. Pine/dead-tree swaps are NOT in the cut group (they replace existing slots at near-zero net cost). |
 | Fillers — ONLY if budget remains: NY skyline (= L_build_1/2/3 GLBs) ≤ 1.0 MB GLB total; archviz fillers ≤ 0.5 MB GLB total (only if the `.blend` extraction is clean) | | ≤ 2.0 MB embedded | These ship ONLY if the running total (tracked in the swap log, §11) stays ≤ 32 MB after adding them. They are the first cut. |
 
 **Vertex budgets (Goldfish — a byte budget alone doesn't constrain geometry):** the Woman at
@@ -691,7 +724,10 @@ on the FINAL `index.html` BYTES, not on GLB bytes):**
 64 bytes/vert) — she cannot fit a 1.5 MB GLB without decimating to roughly a tenth, which
 the v1 doc never stated for her (it stated it for the cartoon Girl). Budgets: each human ≤18k verts (Woman 164k → ~16k; the cartoon Girl 48k → ~16k, already proven at 16,515 verts / 1,483,116 B — the fallback keeper); Hen ≤3k; cow ≤8k; dog ≤6k; bird ≤3k; Honey
 Locust ≤10k; each grass species ≤2k per plant; each enterable building ≤30k; Norton ≤50k
-faces (already); Jeep ≤20k; Old Car ≤20k; Military Truck ≤25k; each weapon ≤2k. Zane's
+faces (already); Jeep ≤20k; Old Car ≤20k; Military Truck ≤25k; each weapon ≤2k. Grab3D
+extras — already light, texture compression is the work, not decimation: pine ≤8k verts
+(as-is 8,032 tris); dead tree ≤14k; dirt road ≤25k; bush ≤12k; boulders ≤11k; rocks ≤7k;
+stump ≤9k. Zane's
 decimation target: ≤18k verts from the 109 MB source (32,771 polys). Worker: 34,990 tris
 ≈ ~17–18k verts — likely fits with light decimation; state the exact count from the
 Blender inspection at §9 step 1. **Source poly counts (verified 2026-11-11 ~20:30 AST):**
@@ -699,7 +735,9 @@ Worker 34,990 tris · Woman 163,993 verts / ~300,000 tris (rigged GLB; static ve
 Zane 32,771 polys · Hen 1,062 polys · cow 3,814 polys · bird 22,905 polys · Honey Locust
 1,125,789 polys total (6 variants) · Norton 404,291 polys · Jeep 4,734 polys · Old Car
 295,000 polys · medieval house 75,596 polys · windmill 10,868 polys · shotgun 6,160 polys
-· machete 989 polys · flashlight 2,060 polys. **Format paths:** FBX is the main path;
+· machete 989 polys · flashlight 2,060 polys · Grab3D pine 8,032 tris · dead tree 13,849 ·
+stump 8,264 · straight road 4,220 · dirt road 24,551 · bush 11,570 · boulders 10,112 ·
+rocks 6,656. **Format paths:** FBX is the main path;
 BLEND sources (Norton, Military Truck, archviz) open directly in Blender — prefer the
 BLEND for the Norton (may have better rigging) and the Truck (the 16 KB GLB is too
 low-detail to use directly); the shotgun is ALREADY GLB (no conversion — just
@@ -708,8 +746,9 @@ decimate/resize/verify); the medieval block (Lumion `.ls11`) has NO path — DRO
 **Why the old table was wrong (Goldfish):** it summed to ~23.1 MB of GLB (≈30.8 MB base64)
 against an "18 MB" total that never said GLB or base64 — 14.4 + 30.8 ≈ 45 MB, over the cap
 by ~13 MB. The table above is the honest math. **Cut order if the running total approaches
-32 MB:** (1) texture resolution, (2) NY skyline / archviz fillers, (3) Zane —
-drop him entirely, (4) one grass species. Never silently exceed 32 MB — report it.
+32 MB:** (1) texture resolution, (2) NY skyline / archviz fillers, (3) road + ground clutter
+as a group (pure additions — the pine/dead-tree swaps stay, they replace existing slots),
+(4) Zane — drop him entirely, (5) one grass species. Never silently exceed 32 MB — report it.
 
 ---
 
@@ -757,8 +796,9 @@ difference first.
    `curl` returns HTTP 200 for the preview URL — pushed ≠ exists, check it.
 9. **License gate:** source URL + license recorded in the README swap log BEFORE the commit
    — a model can pass gates 1–8 and still not ship with an unclear or non-commercial
-   license. **Satisfied for the 23 landed files by §2a** (author + license per file,
-   verified by the parent 2026-11-11 ~20:30 AST); Maxtree's CUSTOM license is recorded
+   license. **Satisfied for the 23 CGTrader files by §2a** (author + license per file,
+   verified by the parent 2026-11-11 ~20:30 AST) **AND the 11 Grab3D files by §2a(i)/(ii)**
+   (all CC0 1.0, license files saved alongside each model); Maxtree's CUSTOM license is recorded
    verbatim. The dog is the only pending license.
 10. **Enterable buildings only — FURNISHED:** an unfurnished interior does not ship
     ("furnish pass 2" means it does not ship in pass 1, not that it ships empty).
@@ -785,7 +825,15 @@ fails, STOP that swap (do not stack more swaps on top of a broken build) and rep
 5. **Worker (seated) → Wounded Stranger.** Same model, baked seated pose.
 6. **Shotgun / machete / flashlight → viewmodels** (when the files land). Verify the
    first-person screenshots (weapon in hand, muzzle position).
-7. **Honey Locust → oak (`_6`/`r.scene`) + 4th tree variant; Maxtree grasses → instanced tufts.**
+7. **Trees + road + clutter:** Honey Locust → oak (`_6`/`r.scene`) + 4th tree variant;
+   Grab3D Pine → pine (`$6`/`n.scene`); Grab3D Dead Tree → dead tree (`AS`/`b.scene`);
+   Maxtree grasses → instanced tufts. **Road + ground clutter (NEW, §3b):** straight asphalt
+   tiles along the main drivable road, dirt tiles on village paths + the chase back-roads
+   fork, bush/boulders/rocks/stump scattered per the §3b placement rules — one const per
+   type, road path mapped from the terrain + landmarks first, top-down screenshot verifies
+   placement BEFORE the road commit. The road/clutter commit is a separate per-swap commit
+   AFTER the tree swaps, and it is the first cut if the running total (§11) projects over
+   32 MB (see §7 cut order — the pine/dead-tree swaps stay; only the pure additions cut).
 8. **Enterable buildings:** medieval house → windmill → village homes, each with doorway,
    colliders, shelter rect, door + knob + glow. Furnish pass per §4. Placement verification
    (top-down screenshot or collider dump, §4) BEFORE each building's swap commits. The
